@@ -76,25 +76,20 @@ impl RawgService {
         );
 
         // Faire la requête
-        let response = self.client.get(&url).send().await.map_err(|e| {
-            AppError {
-                message: format!("Failed to fetch from RAWG: {}", e),
-            }
+        let response = self.client.get(&url).send().await.map_err(|e| AppError {
+            message: format!("Failed to fetch from RAWG: {}", e),
         })?;
 
         // Récupérer le body de la réponse en tant que texte d'abord
-        let response_text = response.text().await.map_err(|e| {
-            AppError {
-                message: format!("Failed to read RAWG response: {}", e),
-            }
+        let response_text = response.text().await.map_err(|e| AppError {
+            message: format!("Failed to read RAWG response: {}", e),
         })?;
 
         // Parser la réponse JSON
-        let games: serde_json::Value = serde_json::from_str(&response_text).map_err(|e| {
-            AppError {
+        let games: serde_json::Value =
+            serde_json::from_str(&response_text).map_err(|e| AppError {
                 message: format!("Failed to parse RAWG response: {}", e),
-            }
-        })?;
+            })?;
 
         // Log du nombre de résultats
         let results = games["results"].as_array();
@@ -111,22 +106,16 @@ impl RawgService {
     async fn get_game_details(&self, game_id: i32) -> Result<RawgGame, AppError> {
         let url = format!("{}/games/{}?key={}", API_BASE_URL, game_id, self.api_key);
 
-        let response = self.client.get(&url).send().await.map_err(|e| {
-            AppError {
-                message: format!("Failed to fetch game details: {}", e),
-            }
+        let response = self.client.get(&url).send().await.map_err(|e| AppError {
+            message: format!("Failed to fetch game details: {}", e),
         })?;
 
-        let response_text = response.text().await.map_err(|e| {
-            AppError {
-                message: format!("Failed to read game details: {}", e),
-            }
+        let response_text = response.text().await.map_err(|e| AppError {
+            message: format!("Failed to read game details: {}", e),
         })?;
 
-        serde_json::from_str(&response_text).map_err(|e| {
-            AppError {
-                message: format!("Failed to parse game details: {}", e),
-            }
+        serde_json::from_str(&response_text).map_err(|e| AppError {
+            message: format!("Failed to parse game details: {}", e),
         })
     }
     pub async fn cache_game_media(

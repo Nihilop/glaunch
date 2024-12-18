@@ -45,23 +45,26 @@ impl EpicApi {
     }
 
     pub async fn get_profile(&self, accountId: String) -> Result<EpicProfile, AppError> {
-        let url = format!("https://api.epicgames.dev/epic/id/v2/accounts?accountId={}", accountId);
-        let response = self.client
+        let url = format!(
+            "https://api.epicgames.dev/epic/id/v2/accounts?accountId={}",
+            accountId
+        );
+        let response = self
+            .client
             .get(&url)
             .bearer_auth(&self.access_token)
             .send()
             .await
             .map_err(|e| AppError {
-                message: format!("Failed to fetch Epic profile: {}", e)
+                message: format!("Failed to fetch Epic profile: {}", e),
             })?;
 
         let text = response.text().await?;
 
         // Désérialiser le tableau JSON
-        let profiles: Vec<EpicProfile> = serde_json::from_str(&text)
-            .map_err(|e| AppError {
-                message: format!("Failed to parse profile: {}", e)
-            })?;
+        let profiles: Vec<EpicProfile> = serde_json::from_str(&text).map_err(|e| AppError {
+            message: format!("Failed to parse profile: {}", e),
+        })?;
 
         // Retourner le premier élément du tableau
         if let Some(profile) = profiles.into_iter().next() {
@@ -74,18 +77,18 @@ impl EpicApi {
     }
 
     pub async fn get_friends(&self) -> Result<Vec<EpicFriend>, AppError> {
-        let response = self.client
+        let response = self
+            .client
             .get("https://api.epicgames.com/friends/public/friends")
             .bearer_auth(&self.access_token)
             .send()
             .await
             .map_err(|e| AppError {
-                message: format!("Failed to fetch Epic friends: {}", e)
+                message: format!("Failed to fetch Epic friends: {}", e),
             })?;
 
-        response.json().await
-            .map_err(|e| AppError {
-                message: format!("Failed to parse Epic friends: {}", e)
-            })
+        response.json().await.map_err(|e| AppError {
+            message: format!("Failed to parse Epic friends: {}", e),
+        })
     }
 }

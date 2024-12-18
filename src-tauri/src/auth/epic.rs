@@ -55,7 +55,8 @@ impl EpicAuth {
             STANDARD.encode(format!("{}:{}", self.client_id, self.client_secret))
         );
 
-        let response = self.client
+        let response = self
+            .client
             .post("https://api.epicgames.dev/epic/oauth/v2/token")
             .header("Authorization", auth_header)
             .form(&[
@@ -66,23 +67,23 @@ impl EpicAuth {
             .send()
             .await
             .map_err(|e| AppError {
-                message: format!("Failed to exchange Epic code: {}", e)
+                message: format!("Failed to exchange Epic code: {}", e),
             })?;
 
         if !response.status().is_success() {
             let error_text = response.text().await.unwrap_or_default();
             return Err(AppError {
-                message: format!("Epic token request failed: {}", error_text)
+                message: format!("Epic token request failed: {}", error_text),
             });
         }
 
         let response_text = response.text().await.map_err(|e| AppError {
-            message: format!("Failed to read response text: {}", e)
+            message: format!("Failed to read response text: {}", e),
         })?;
 
-        let token_data: EpicTokenResponse = serde_json::from_str(&response_text)
-            .map_err(|e| AppError {
-                message: format!("Failed to parse Epic token response: {}", e)
+        let token_data: EpicTokenResponse =
+            serde_json::from_str(&response_text).map_err(|e| AppError {
+                message: format!("Failed to parse Epic token response: {}", e),
             })?;
 
         Ok(token_data)

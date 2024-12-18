@@ -1,8 +1,8 @@
+use crate::utils::AppError;
 use serde::{Deserialize, Serialize};
+use std::env;
 use std::fs;
 use std::path::PathBuf;
-use std::env;
-use crate::utils::AppError;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AppSettings {
@@ -110,9 +110,7 @@ impl SettingsManager {
         let app_data = env::var("APPDATA").map_err(|e| AppError {
             message: format!("Failed to get APPDATA path: {}", e),
         })?;
-        let db_path = PathBuf::from(app_data)
-            .join("glaunch")
-            .join("games.db");
+        let db_path = PathBuf::from(app_data).join("glaunch").join("games.db");
 
         if !db_path.exists() {
             return Err(AppError {

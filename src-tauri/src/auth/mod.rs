@@ -1,13 +1,13 @@
 pub mod battlenet;
 pub mod epic;
-pub mod steam;
 pub mod server;
+pub mod steam;
 
 pub use battlenet::BattleNetAuth;
 pub use epic::EpicAuth;
 pub use epic::EpicTokenResponse;
-pub use steam::SteamAuth;
 pub use server::AuthServer;
+pub use steam::SteamAuth;
 
 // Types communs pour l'authentification
 #[derive(Debug)]

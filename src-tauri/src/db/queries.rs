@@ -1,5 +1,5 @@
 // src/db/queries.rs
-use crate::models::{Game, GameInstallation, GameMedia, GameMetadata, Platform, GameStats};
+use crate::models::{Game, GameInstallation, GameMedia, GameMetadata, GameStats, Platform};
 use crate::utils::AppError;
 use chrono::Utc;
 use sqlx::{Executor, Row, SqlitePool};
@@ -95,16 +95,11 @@ impl<'a> GameQueries<'a> {
                 };
 
                 // Formater les chemins des médias
-                let thumbnail = row
-                    .get::<Option<String>, _>("thumbnail");
-                let cover = row
-                    .get::<Option<String>, _>("cover");
-                let background = row
-                    .get::<Option<String>, _>("background");
-                let icon = row
-                    .get::<Option<String>, _>("icon");
-                let logo = row
-                    .get::<Option<String>, _>("logo");
+                let thumbnail = row.get::<Option<String>, _>("thumbnail");
+                let cover = row.get::<Option<String>, _>("cover");
+                let background = row.get::<Option<String>, _>("background");
+                let icon = row.get::<Option<String>, _>("icon");
+                let logo = row.get::<Option<String>, _>("logo");
 
                 Ok(Some(Game {
                     id: row.get("id"),
@@ -141,7 +136,9 @@ impl<'a> GameQueries<'a> {
                     last_played: row.get("last_played"),
                     stats: GameStats {
                         total_playtime: row.get::<Option<i64>, _>("total_playtime").unwrap_or(0),
-                        last_session_duration: row.get::<Option<i64>, _>("last_session_duration").unwrap_or(0),
+                        last_session_duration: row
+                            .get::<Option<i64>, _>("last_session_duration")
+                            .unwrap_or(0),
                         sessions_count: row.get::<Option<i32>, _>("sessions_count").unwrap_or(0),
                         first_played: row.get("first_played"),
                         last_played: row.get("last_played"),
@@ -153,17 +150,15 @@ impl<'a> GameQueries<'a> {
     }
 
     pub async fn update_last_played(&self, game_id: &str, timestamp: i64) -> Result<(), AppError> {
-        sqlx::query(
-            "UPDATE games SET last_played = ?, updated_at = ? WHERE id = ?"
-        )
-        .bind(timestamp)
-        .bind(timestamp)
-        .bind(game_id)
-        .execute(self.pool)
-        .await
-        .map_err(|e| AppError {
-            message: format!("Failed to update last_played: {}", e),
-        })?;
+        sqlx::query("UPDATE games SET last_played = ?, updated_at = ? WHERE id = ?")
+            .bind(timestamp)
+            .bind(timestamp)
+            .bind(game_id)
+            .execute(self.pool)
+            .await
+            .map_err(|e| AppError {
+                message: format!("Failed to update last_played: {}", e),
+            })?;
 
         Ok(())
     }
@@ -396,15 +391,14 @@ impl<'a> SessionQueries<'a> {
         let start_time: i64 = row.get("start_time");
 
         // Vérifier les stats actuelles
-        let current_stats = sqlx::query(
-            "SELECT total_playtime, sessions_count FROM game_stats WHERE game_id = ?"
-        )
-        .bind(&game_id)
-        .fetch_optional(&mut *tx)
-        .await
-        .map_err(|e| AppError {
-            message: format!("Failed to fetch current stats: {}", e),
-        })?;
+        let current_stats =
+            sqlx::query("SELECT total_playtime, sessions_count FROM game_stats WHERE game_id = ?")
+                .bind(&game_id)
+                .fetch_optional(&mut *tx)
+                .await
+                .map_err(|e| AppError {
+                    message: format!("Failed to fetch current stats: {}", e),
+                })?;
 
         // Mettre à jour les statistiques globales
         sqlx::query(
@@ -434,15 +428,14 @@ impl<'a> SessionQueries<'a> {
         })?;
 
         // Vérifier les nouvelles stats
-        let new_stats = sqlx::query(
-            "SELECT total_playtime, sessions_count FROM game_stats WHERE game_id = ?"
-        )
-        .bind(&game_id)
-        .fetch_one(&mut *tx)
-        .await
-        .map_err(|e| AppError {
-            message: format!("Failed to fetch updated stats: {}", e),
-        })?;
+        let new_stats =
+            sqlx::query("SELECT total_playtime, sessions_count FROM game_stats WHERE game_id = ?")
+                .bind(&game_id)
+                .fetch_one(&mut *tx)
+                .await
+                .map_err(|e| AppError {
+                    message: format!("Failed to fetch updated stats: {}", e),
+                })?;
 
         tx.commit().await.map_err(|e| AppError {
             message: format!("Failed to commit transaction: {}", e),

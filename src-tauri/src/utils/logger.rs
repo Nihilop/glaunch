@@ -1,10 +1,10 @@
 use crate::utils::AppError;
 use chrono::Local;
-use std::fs::{OpenOptions, create_dir_all};
+use lazy_static::lazy_static;
+use std::fs::{create_dir_all, OpenOptions};
 use std::io::Write;
 use std::path::PathBuf;
 use std::sync::Mutex;
-use lazy_static::lazy_static;
 
 lazy_static! {
     static ref LOG_PATH: Mutex<Option<PathBuf>> = Mutex::new(None);
@@ -15,7 +15,7 @@ pub enum LogLevel {
     Info,
     Warning,
     Error,
-    Debug
+    Debug,
 }
 
 pub struct Logger;
@@ -43,10 +43,15 @@ impl Logger {
             })?;
 
         let timestamp = Local::now().format("%Y-%m-%d %H:%M:%S");
-        writeln!(file, "\n[{}] [INFO] Application starting... Version: {}", timestamp, env!("CARGO_PKG_VERSION"))
-            .map_err(|e| AppError {
-                message: format!("Failed to write to log file: {}", e),
-            })?;
+        writeln!(
+            file,
+            "\n[{}] [INFO] Application starting... Version: {}",
+            timestamp,
+            env!("CARGO_PKG_VERSION")
+        )
+        .map_err(|e| AppError {
+            message: format!("Failed to write to log file: {}", e),
+        })?;
 
         // Store the log path
         let mut path = LOG_PATH.lock().unwrap();

@@ -1,7 +1,7 @@
 use crate::utils::AppError;
-use serde::{Deserialize, Serialize};
-use semver::Version;
 use reqwest::Client;
+use semver::Version;
+use serde::{Deserialize, Serialize};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

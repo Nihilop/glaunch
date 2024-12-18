@@ -1,11 +1,11 @@
 // Dans services/metadata.rs
-use std::sync::Arc;
-use crate::models::{Game, GameMetadata, GameMedia};
-use crate::db::Database;
-use crate::utils::AppError;
 use super::igdb::IgdbService;
+use crate::db::Database;
+use crate::models::{Game, GameMedia, GameMetadata};
 use crate::services::igdb::IgdbGame;
 use crate::services::IgdbSearchResult;
+use crate::utils::AppError;
+use std::sync::Arc;
 
 pub struct MetadataService {
     database: Arc<Database>,
@@ -13,7 +13,11 @@ pub struct MetadataService {
 }
 
 impl MetadataService {
-    pub fn new(database: Arc<Database>, client_id: String, client_secret: String) -> Result<Self, AppError> {
+    pub fn new(
+        database: Arc<Database>,
+        client_id: String,
+        client_secret: String,
+    ) -> Result<Self, AppError> {
         // Obtenir le token d'accès IGDB
         let access_token = tokio::runtime::Runtime::new()
             .unwrap()
@@ -27,7 +31,8 @@ impl MetadataService {
 
     pub async fn update_with_igdb_id(&self, game_id: &str, igdb_id: i64) -> Result<(), AppError> {
         // Récupérer d'abord le jeu de la base de données
-        let mut game = self.database
+        let mut game = self
+            .database
             .games()
             .get_game(game_id)
             .await?
@@ -50,7 +55,6 @@ impl MetadataService {
         Ok(())
     }
 
-
     pub async fn search_games(&self, query: &str) -> Result<Vec<IgdbSearchResult>, AppError> {
         self.igdb.search_games(query).await
     }
@@ -58,28 +62,31 @@ impl MetadataService {
     pub async fn convert_to_metadata(
         &self,
         game_id: &str,
-        igdb_game: IgdbGame
+        igdb_game: IgdbGame,
     ) -> Result<(GameMetadata, GameMedia), AppError> {
         let metadata = GameMetadata {
             title: igdb_game.name.clone(),
             description: igdb_game.summary.clone(),
-            developer: igdb_game.involved_companies
-                .as_ref()
-                .and_then(|companies| companies
+            developer: igdb_game.involved_companies.as_ref().and_then(|companies| {
+                companies
                     .iter()
                     .find(|c| c.developer)
-                    .map(|c| c.company.name.clone())),
-            publisher: igdb_game.involved_companies
-                .as_ref()
-                .and_then(|companies| companies
+                    .map(|c| c.company.name.clone())
+            }),
+            publisher: igdb_game.involved_companies.as_ref().and_then(|companies| {
+                companies
                     .iter()
                     .find(|c| c.publisher)
-                    .map(|c| c.company.name.clone())),
-            release_date: igdb_game.first_release_date
-                .map(|ts| chrono::DateTime::from_timestamp(ts, 0)
+                    .map(|c| c.company.name.clone())
+            }),
+            release_date: igdb_game.first_release_date.map(|ts| {
+                chrono::DateTime::from_timestamp(ts, 0)
                     .map(|dt| dt.format("%Y-%m-%d").to_string())
-                    .unwrap_or_default()),
-            genres: igdb_game.genres.clone()
+                    .unwrap_or_default()
+            }),
+            genres: igdb_game
+                .genres
+                .clone()
                 .unwrap_or_default()
                 .into_iter()
                 .map(|genre| genre.name)
@@ -93,7 +100,10 @@ impl MetadataService {
         Ok((metadata, media))
     }
 
-    async fn get_twitch_access_token(client_id: &str, client_secret: &str) -> Result<String, AppError> {
+    async fn get_twitch_access_token(
+        client_id: &str,
+        client_secret: &str,
+    ) -> Result<String, AppError> {
         let client = reqwest::Client::new();
         let response = client
             .post("https://id.twitch.tv/oauth2/token")
@@ -127,23 +137,25 @@ impl MetadataService {
                 let metadata = GameMetadata {
                     title: igdb_game.name.clone(),
                     description: igdb_game.summary.clone(),
-                    developer: igdb_game.involved_companies
-                        .as_ref()
-                        .and_then(|companies| companies
+                    developer: igdb_game.involved_companies.as_ref().and_then(|companies| {
+                        companies
                             .iter()
                             .find(|c| c.developer)
-                            .map(|c| c.company.name.clone())),
-                    publisher: igdb_game.involved_companies
-                        .as_ref()
-                        .and_then(|companies| companies
+                            .map(|c| c.company.name.clone())
+                    }),
+                    publisher: igdb_game.involved_companies.as_ref().and_then(|companies| {
+                        companies
                             .iter()
                             .find(|c| c.publisher)
-                            .map(|c| c.company.name.clone())),
-                    release_date: igdb_game.first_release_date
-                        .map(|ts| chrono::DateTime::from_timestamp(ts, 0)
+                            .map(|c| c.company.name.clone())
+                    }),
+                    release_date: igdb_game.first_release_date.map(|ts| {
+                        chrono::DateTime::from_timestamp(ts, 0)
                             .map(|dt| dt.format("%Y-%m-%d").to_string())
-                            .unwrap_or_default()),
-                    genres: igdb_game.genres
+                            .unwrap_or_default()
+                    }),
+                    genres: igdb_game
+                        .genres
                         .as_ref()
                         .map(|genres| genres.iter().map(|g| g.name.clone()).collect())
                         .unwrap_or_default(),
@@ -164,9 +176,7 @@ impl MetadataService {
                 game.media = media;
                 Ok(())
             }
-            Err(e) => {
-                Ok(())
-            }
+            Err(e) => Ok(()),
         }
     }
 }

@@ -50,7 +50,6 @@ pub async fn run_migrations(pool: &SqlitePool) -> Result<(), AppError> {
     // Appliquer les nouvelles migrations
     for migration in MIGRATIONS {
         if !applied_versions.contains(&migration.version) {
-
             let mut tx = pool.begin().await.map_err(|e| AppError {
                 message: format!("Failed to start transaction: {}", e),
             })?;

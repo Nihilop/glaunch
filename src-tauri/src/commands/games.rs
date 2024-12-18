@@ -1,7 +1,7 @@
-use crate::AppState;
-use crate::services::IgdbSearchResult;
 use crate::models::CustomGameConfig;
 use crate::models::Game;
+use crate::services::IgdbSearchResult;
+use crate::AppState;
 use std::path::PathBuf;
 
 #[tauri::command]
@@ -9,7 +9,8 @@ pub async fn scan_games(
     state: tauri::State<'_, AppState>,
     use_cache: bool,
 ) -> Result<Vec<Game>, String> {
-    state.game_manager
+    state
+        .game_manager
         .scan_all_platforms(use_cache)
         .await
         .map_err(|e| e.message)
@@ -106,10 +107,7 @@ pub async fn add_custom_game(
 }
 
 #[tauri::command]
-pub async fn delete_game(
-    state: tauri::State<'_, AppState>,
-    game_id: String,
-) -> Result<(), String> {
+pub async fn delete_game(state: tauri::State<'_, AppState>, game_id: String) -> Result<(), String> {
     state
         .game_manager
         .delete_game(&game_id)

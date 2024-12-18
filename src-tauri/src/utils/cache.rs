@@ -46,7 +46,7 @@ impl MediaCache {
                 if let Ok(age) = SystemTime::now().duration_since(modified) {
                     if age < max_age {
                         // Retourner juste la clé avec le protocole asset
-                        return Ok(cache_path.to_string_lossy().to_string())
+                        return Ok(cache_path.to_string_lossy().to_string());
                     }
                 }
             }

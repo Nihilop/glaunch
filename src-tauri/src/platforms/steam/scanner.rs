@@ -1,4 +1,6 @@
-use crate::models::{Game, GameInstallation, GameMedia, GameMetadata, GameResult, Platform, GameStats};
+use crate::models::{
+    Game, GameInstallation, GameMedia, GameMetadata, GameResult, GameStats, Platform,
+};
 use crate::utils::vdf::VdfParser;
 use crate::utils::{acf::AcfParser, AppError};
 use std::collections::HashSet;

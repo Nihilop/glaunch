@@ -65,14 +65,17 @@ impl GameMonitor {
                     if games.is_empty() {
                         break;
                     }
-                    games.iter()
+                    games
+                        .iter()
                         .map(|(k, v)| (k.clone(), v.clone()))
                         .collect::<Vec<_>>()
                 };
 
                 for (game_id, session) in games_to_check {
                     let is_running = unsafe {
-                        if let Ok(handle) = OpenProcess(PROCESS_QUERY_INFORMATION, false, session.process_id) {
+                        if let Ok(handle) =
+                            OpenProcess(PROCESS_QUERY_INFORMATION, false, session.process_id)
+                        {
                             let mut exit_code = 0u32;
                             GetExitCodeProcess(handle, &mut exit_code).as_bool() && exit_code == 259
                         } else {
@@ -83,9 +86,16 @@ impl GameMonitor {
                     if !is_running {
                         if let Ok(duration) = session.start_time.elapsed() {
                             let duration_secs = duration.as_secs() as i64;
-                            if let Ok(session_id) = database.sessions().start_session(&game_id).await {
+                            if let Ok(session_id) =
+                                database.sessions().start_session(&game_id).await
+                            {
                                 // Passer la durée calculée directement
-                                match database.sessions().end_session(session_id, duration_secs).await { // Nouveau paramètre
+                                match database
+                                    .sessions()
+                                    .end_session(session_id, duration_secs)
+                                    .await
+                                {
+                                    // Nouveau paramètre
                                     Ok(_) => println!("✅ Session recorded successfully"),
                                     Err(e) => println!("❌ Error ending session: {}", e),
                                 }

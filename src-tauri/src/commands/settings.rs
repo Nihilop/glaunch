@@ -1,5 +1,5 @@
-use crate::utils::settings::{AppSettings, SettingsManager};
 use crate::services::updater::UpdateStatus;
+use crate::utils::settings::{AppSettings, SettingsManager};
 use std::path::PathBuf;
 
 #[tauri::command]

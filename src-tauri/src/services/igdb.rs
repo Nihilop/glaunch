@@ -1,10 +1,10 @@
+use crate::models::{GameMedia, GameMetadata};
+use crate::utils::{cache::MediaCache, AppError};
+use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION, CONTENT_TYPE};
+use reqwest::Client;
+use serde::{Deserialize, Serialize};
 use std::time::{Duration, Instant};
 use tokio::time::sleep;
-use serde::{Deserialize, Serialize};
-use crate::models::{GameMedia, GameMetadata};
-use crate::utils::{AppError, cache::MediaCache};
-use reqwest::Client;
-use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION, CONTENT_TYPE};
 
 const IGDB_API_URL: &str = "https://api.igdb.com/v4";
 const RATE_LIMIT_DELAY: Duration = Duration::from_millis(250); // 4 requêtes par seconde max
@@ -68,7 +68,6 @@ pub struct IgdbSearchResult {
 }
 
 impl IgdbService {
-
     pub fn new(client_id: String, access_token: String) -> Result<Self, AppError> {
         Ok(Self {
             client: Client::new(),
@@ -94,29 +93,33 @@ impl IgdbService {
             limit 10;"#
         );
 
-        let response = self.client
+        let response = self
+            .client
             .post(&format!("{}/games", IGDB_API_URL))
             .headers(self.get_headers())
             .body(body)
             .send()
             .await?;
 
-
         let games: Vec<IgdbGame> = response.json().await?;
 
-        Ok(games.into_iter().map(|game| IgdbSearchResult {
-            id: game.id,
-            name: game.name,
-            release_date: game.first_release_date.map(|ts| {
-                chrono::DateTime::from_timestamp(ts, 0)
-                    .map(|dt| dt.format("%Y-%m-%d").to_string())
-                    .unwrap_or_default()
-            }),
-            cover_url: game.cover.and_then(|c| c.url_path.clone()),
-            company: game.involved_companies
-                .and_then(|companies| companies.first().cloned())
-                .map(|c| c.company.name.clone())
-        }).collect())
+        Ok(games
+            .into_iter()
+            .map(|game| IgdbSearchResult {
+                id: game.id,
+                name: game.name,
+                release_date: game.first_release_date.map(|ts| {
+                    chrono::DateTime::from_timestamp(ts, 0)
+                        .map(|dt| dt.format("%Y-%m-%d").to_string())
+                        .unwrap_or_default()
+                }),
+                cover_url: game.cover.and_then(|c| c.url_path.clone()),
+                company: game
+                    .involved_companies
+                    .and_then(|companies| companies.first().cloned())
+                    .map(|c| c.company.name.clone()),
+            })
+            .collect())
     }
 
     pub async fn get_game_by_id(&self, igdb_id: i64) -> Result<IgdbGame, AppError> {
@@ -134,7 +137,8 @@ impl IgdbService {
             genres.*;"#
         );
 
-        let response = self.client
+        let response = self
+            .client
             .post(&format!("{}/games", IGDB_API_URL))
             .headers(self.get_headers())
             .body(body)
@@ -161,18 +165,12 @@ impl IgdbService {
 
     fn get_headers(&self) -> HeaderMap {
         let mut headers = HeaderMap::new();
-        headers.insert(
-            "Client-ID",
-            HeaderValue::from_str(&self.client_id).unwrap(),
-        );
+        headers.insert("Client-ID", HeaderValue::from_str(&self.client_id).unwrap());
         headers.insert(
             AUTHORIZATION,
             HeaderValue::from_str(&format!("Bearer {}", self.access_token)).unwrap(),
         );
-        headers.insert(
-            CONTENT_TYPE,
-            HeaderValue::from_static("application/json"),
-        );
+        headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
         headers
     }
 
@@ -192,7 +190,8 @@ impl IgdbService {
             limit 1;"#
         );
 
-        let response = self.client
+        let response = self
+            .client
             .post(&format!("{}/games", IGDB_API_URL))
             .headers(self.get_headers())
             .body(body)
@@ -216,13 +215,20 @@ impl IgdbService {
 
         // Fonction helper pour construire les URLs d'images
         let build_image_url = |image_id: &str, size: &str| {
-            format!("https://images.igdb.com/igdb/image/upload/t_{}/{}.jpg", size, image_id)
+            format!(
+                "https://images.igdb.com/igdb/image/upload/t_{}/{}.jpg",
+                size, image_id
+            )
         };
 
         // Récupérer le thumbnail depuis la cover
         let thumbnail = if let Some(cover) = &game.cover {
             let url = build_image_url(&cover.image_id, "cover_big");
-            Some(self.media_cache.get_or_download(&url, cache_duration).await?)
+            Some(
+                self.media_cache
+                    .get_or_download(&url, cache_duration)
+                    .await?,
+            )
         } else {
             None
         };
@@ -231,7 +237,11 @@ impl IgdbService {
         let logo = if let Some(artworks) = &game.artworks {
             if let Some(artwork) = artworks.first() {
                 let url = build_image_url(&artwork.image_id, "logo_med");
-                Some(self.media_cache.get_or_download(&url, cache_duration).await?)
+                Some(
+                    self.media_cache
+                        .get_or_download(&url, cache_duration)
+                        .await?,
+                )
             } else {
                 None
             }
@@ -244,7 +254,11 @@ impl IgdbService {
             if let Some(company) = companies.first() {
                 if let Some(logo) = &company.company.logo {
                     let url = build_image_url(&logo.image_id, "thumb");
-                    Some(self.media_cache.get_or_download(&url, cache_duration).await?)
+                    Some(
+                        self.media_cache
+                            .get_or_download(&url, cache_duration)
+                            .await?,
+                    )
                 } else {
                     None
                 }

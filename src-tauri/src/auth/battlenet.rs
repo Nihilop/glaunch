@@ -67,7 +67,8 @@ impl BattleNetAuth {
     }
 
     pub async fn exchange_code(&self, code: &str) -> Result<TokenResponse, AppError> {
-        let response = self.client
+        let response = self
+            .client
             .post("https://oauth.battle.net/token")
             .basic_auth(&self.client_id, Some(&self.client_secret))
             .form(&[
@@ -78,39 +79,39 @@ impl BattleNetAuth {
             .send()
             .await
             .map_err(|e| AppError {
-                message: format!("Failed to exchange code: {}", e)
+                message: format!("Failed to exchange code: {}", e),
             })?;
 
         if !response.status().is_success() {
             let error_text = response.text().await.unwrap_or_default();
             return Err(AppError {
-                message: format!("Battle.net token request failed: {}", error_text)
+                message: format!("Battle.net token request failed: {}", error_text),
             });
         }
 
-        response.json().await
-            .map_err(|e| AppError {
-                message: format!("Failed to parse token response: {}", e)
-            })
+        response.json().await.map_err(|e| AppError {
+            message: format!("Failed to parse token response: {}", e),
+        })
     }
 
     pub async fn get_profile(&self, token: &str) -> Result<BattleNetProfile, AppError> {
-        let response = self.client
+        let response = self
+            .client
             .get("https://oauth.battle.net/oauth/userinfo")
             .bearer_auth(token)
             .send()
             .await
             .map_err(|e| AppError {
-                message: format!("Failed to fetch profile: {}", e)
+                message: format!("Failed to fetch profile: {}", e),
             })?;
 
         // Log de la réponse brute pour debug
         let text = response.text().await.map_err(|e| AppError {
-            message: format!("Failed to get response text: {}", e)
+            message: format!("Failed to get response text: {}", e),
         })?;
 
         serde_json::from_str(&text).map_err(|e| AppError {
-            message: format!("Failed to parse profile: {}", e)
+            message: format!("Failed to parse profile: {}", e),
         })
     }
 }

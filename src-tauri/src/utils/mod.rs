@@ -1,11 +1,11 @@
 use std::error::Error;
 use std::fmt;
-pub mod settings;
 pub mod acf;
 pub mod cache;
 pub mod executable_finder;
-pub mod vdf;
 pub mod logger;
+pub mod settings;
+pub mod vdf;
 
 pub use logger::Logger;
 
@@ -37,7 +37,7 @@ pub fn to_app_error<E: std::error::Error>(err: E) -> AppError {
 impl From<reqwest::Error> for AppError {
     fn from(error: reqwest::Error) -> Self {
         AppError {
-            message: format!("Request failed: {}", error)
+            message: format!("Request failed: {}", error),
         }
     }
 }

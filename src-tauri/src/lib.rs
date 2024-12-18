@@ -1,12 +1,12 @@
-use std::sync::{Arc, Mutex};
-use tokio::time::Duration;
 use std::env;
+use std::sync::{Arc, Mutex};
 use tauri::{
     menu::{Menu, MenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-    Manager, WindowEvent, Emitter,
+    Emitter, Manager, WindowEvent,
 };
 use tauri_plugin_deep_link::DeepLinkExt;
+use tokio::time::Duration;
 
 // Modules internes
 mod api;
@@ -22,6 +22,7 @@ mod services;
 mod utils;
 
 // Imports essentiels
+use crate::utils::Logger;
 use auth::AuthServer;
 use db::Database;
 use dotenv::dotenv;
@@ -30,7 +31,6 @@ use monitor::GameMonitor;
 use overlay::GameOverlay;
 use utils::settings::SettingsManager;
 use utils::AppError;
-use crate::utils::Logger;
 
 // États de l'application
 pub struct AppState {
@@ -64,6 +64,7 @@ pub fn run() {
     }
 
     let builder = tauri::Builder::default()
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_shell::init())
@@ -184,7 +185,9 @@ pub fn run() {
                 game_monitor.clone(),
                 igdb_client_id,
                 igdb_client_secret,
-            ).map_err(|e| Box::new(e) as Box<dyn std::error::Error>).map(Arc::new)?;
+            )
+            .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)
+            .map(Arc::new)?;
             log_info!("Game manager initialized successfully");
 
             // State management
@@ -192,8 +195,7 @@ pub fn run() {
             app.manage(state);
 
             // Overlay setup
-            let overlay = GameOverlay::new(app.handle().clone())
-                .expect("Failed to create overlay");
+            let overlay = GameOverlay::new(app.handle().clone()).expect("Failed to create overlay");
             let overlay_state = OverlayState {
                 overlay: Arc::new(Mutex::new(Some(overlay))),
             };
@@ -202,7 +204,8 @@ pub fn run() {
             Ok(())
         })
         .on_window_event(|window, event| {
-            if let WindowEvent::CloseRequested { api, .. } = event {  // Enlevez .event()
+            if let WindowEvent::CloseRequested { api, .. } = event {
+                // Enlevez .event()
                 let app_handle = window.app_handle();
 
                 // Vérifier les paramètres sans async/await

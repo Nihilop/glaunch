@@ -1,27 +1,27 @@
+use crate::log_debug;
+use crate::log_info;
+use crate::models::CustomGameConfig;
+use crate::models::GameInstallation;
+use crate::models::GameMedia;
+use crate::models::GameMetadata;
+use crate::models::GameStats;
+use crate::models::Platform;
 use crate::models::{Game, GameResult};
 use crate::monitor::GameMonitor;
 use crate::platforms::traits::GameScanner;
 use crate::platforms::traits::MetadataProvider;
 use crate::platforms::{battlenet, epic, steam, GamePlatform};
-use tokio::process::Command;
 use crate::services::MetadataService;
 use crate::utils::AppError;
 use crate::Database;
 use std::collections::HashSet;
+use std::path::Path;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::SystemTime;
 use tauri::AppHandle;
+use tokio::process::Command;
 use tokio::sync::Mutex;
-use std::path::Path;
-use crate::log_info;
-use crate::log_debug;
-use crate::models::GameStats;
-use crate::models::GameMedia;
-use crate::models::GameMetadata;
-use crate::models::GameInstallation;
-use crate::models::Platform;
-use crate::models::CustomGameConfig;
 
 pub struct GameCache {
     games: Vec<Game>,
@@ -43,14 +43,11 @@ impl GameManager {
         app_handle: AppHandle,
         game_monitor: Arc<GameMonitor>,
         igdb_client_id: String,
-        igdb_client_secret: String
+        igdb_client_secret: String,
     ) -> Result<Self, AppError> {
         let steam_platform = Arc::new(Mutex::new(steam::SteamPlatform::new(database.clone())));
-        let metadata_service = MetadataService::new(
-            database.clone(),
-            igdb_client_id,
-            igdb_client_secret,
-        )?;
+        let metadata_service =
+            MetadataService::new(database.clone(), igdb_client_id, igdb_client_secret)?;
 
         Ok(Self {
             platforms: vec![
@@ -95,11 +92,15 @@ impl GameManager {
                         found_game_ids.insert(scanned_game.id.clone());
 
                         // Vérifier si le jeu existe déjà
-                        if let Ok(Some(existing_game)) = self.database.games().get_game(&scanned_game.id).await {
+                        if let Ok(Some(existing_game)) =
+                            self.database.games().get_game(&scanned_game.id).await
+                        {
                             // Ne mettre à jour que les informations d'installation si nécessaire
-                            if existing_game.installation.version != scanned_game.installation.version
-                                || existing_game.installation.install_path != scanned_game.installation.install_path {
-
+                            if existing_game.installation.version
+                                != scanned_game.installation.version
+                                || existing_game.installation.install_path
+                                    != scanned_game.installation.install_path
+                            {
                                 // Créer un nouveau jeu en préservant les métadonnées existantes
                                 let updated_game = Game {
                                     installation: scanned_game.installation,
@@ -134,7 +135,8 @@ impl GameManager {
         for game in all_games {
             if game.platform != Platform::Custom
                 && !found_game_ids.contains(&game.id)
-                && !game.installation.install_path.exists() {
+                && !game.installation.install_path.exists()
+            {
                 self.database.games().delete_game(&game.id).await?;
             }
         }
@@ -162,11 +164,9 @@ impl GameManager {
                 Platform::Custom => {
                     // Pour les jeux custom, lancer directement l'exécutable
                     if let Some(executable) = game.installation.executable.as_ref() {
-                        Command::new(executable)
-                            .spawn()
-                            .map_err(|e| AppError {
-                                message: format!("Failed to launch custom game: {}", e),
-                            })?;
+                        Command::new(executable).spawn().map_err(|e| AppError {
+                            message: format!("Failed to launch custom game: {}", e),
+                        })?;
 
                         // Utiliser le même système de retry que pour les autres jeux
                         tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
@@ -180,7 +180,7 @@ impl GameManager {
                     Err(AppError {
                         message: "No executable path found for custom game".to_string(),
                     })
-                },
+                }
                 _ => {
                     // Garder le code existant pour les autres plateformes
                     for platform in &self.platforms {
@@ -227,7 +227,7 @@ impl GameManager {
         let executable_path = PathBuf::from(&config.executable_path);
         if !executable_path.exists() {
             return Err(AppError {
-                message: format!("Executable not found: {}", config.executable_path)
+                message: format!("Executable not found: {}", config.executable_path),
             });
         }
 
@@ -235,49 +235,49 @@ impl GameManager {
         let install_path = PathBuf::from(&config.install_path);
         if !install_path.exists() {
             return Err(AppError {
-                message: format!("Installation path not found: {}", config.install_path)
+                message: format!("Installation path not found: {}", config.install_path),
             });
         }
 
         let icon_path = config.icon_path; // Le move se fait ici
         let game = Game {
-           id: custom_id.clone(),
-           platform_id: custom_id,
-           platform: Platform::Custom,
-           title: config.title.clone(),
-           installation: GameInstallation {
-               install_path: install_path.clone(),
-               executable: Some(config.executable_path),
-               size: Self::calculate_folder_size(&install_path)?,
-               version: None,
-               last_updated: None,
-           },
-           metadata: GameMetadata {
-               title: config.title,
-               description: None,
-               developer: None,
-               publisher: None,
-               release_date: None,
-               genres: Vec::new(),
-               tags: Vec::new(),
-               media: None,
-           },
-           media: GameMedia {
-               thumbnail: icon_path.clone(), // Utiliser le clone
-               cover: None,
-               screenshots: Vec::new(),
-               background: None,
-               icon: icon_path,  // Utiliser la valeur originale
-               logo: None,
-           },
-           last_played: None,
-           stats: GameStats {
-               total_playtime: 0,
-               last_session_duration: 0,
-               sessions_count: 0,
-               first_played: None,
-               last_played: None,
-           },
+            id: custom_id.clone(),
+            platform_id: custom_id,
+            platform: Platform::Custom,
+            title: config.title.clone(),
+            installation: GameInstallation {
+                install_path: install_path.clone(),
+                executable: Some(config.executable_path),
+                size: Self::calculate_folder_size(&install_path)?,
+                version: None,
+                last_updated: None,
+            },
+            metadata: GameMetadata {
+                title: config.title,
+                description: None,
+                developer: None,
+                publisher: None,
+                release_date: None,
+                genres: Vec::new(),
+                tags: Vec::new(),
+                media: None,
+            },
+            media: GameMedia {
+                thumbnail: icon_path.clone(), // Utiliser le clone
+                cover: None,
+                screenshots: Vec::new(),
+                background: None,
+                icon: icon_path, // Utiliser la valeur originale
+                logo: None,
+            },
+            last_played: None,
+            stats: GameStats {
+                total_playtime: 0,
+                last_session_duration: 0,
+                sessions_count: 0,
+                first_played: None,
+                last_played: None,
+            },
         };
         // Sauvegarder le jeu dans la base de données
         self.database.games().upsert_game(&game).await?;
@@ -287,7 +287,10 @@ impl GameManager {
 
     fn calculate_folder_size(path: &Path) -> GameResult<u64> {
         let mut total_size = 0u64;
-        for entry in walkdir::WalkDir::new(path).into_iter().filter_map(|e| e.ok()) {
+        for entry in walkdir::WalkDir::new(path)
+            .into_iter()
+            .filter_map(|e| e.ok())
+        {
             if entry.path().is_file() {
                 total_size += entry.metadata().map(|m| m.len()).unwrap_or(0);
             }

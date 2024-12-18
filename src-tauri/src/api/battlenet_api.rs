@@ -34,49 +34,48 @@ impl BattleNetApi {
 
     pub async fn get_profile(&self) -> Result<BattleNetProfile, AppError> {
         // On utilise le token stocké dans l'instance
-        let response = self.client
+        let response = self
+            .client
             .get("https://oauth.battle.net/oauth/userinfo")
             .bearer_auth(&self.access_token)
             .send()
             .await
             .map_err(|e| AppError {
-                message: format!("Failed to fetch profile: {}", e)
+                message: format!("Failed to fetch profile: {}", e),
             })?;
 
         let text = response.text().await?;
 
-        serde_json::from_str(&text)
-            .map_err(|e| AppError {
-                message: format!("Failed to parse profile: {}", e)
-            })
+        serde_json::from_str(&text).map_err(|e| AppError {
+            message: format!("Failed to parse profile: {}", e),
+        })
     }
 
     pub async fn get_friends(&self) -> Result<Vec<BattleNetFriend>, AppError> {
-        let response = self.client
+        let response = self
+            .client
             .get("https://us.api.blizzard.com/social/friends")
             .bearer_auth(&self.access_token)
             .send()
             .await
             .map_err(|e| AppError {
-                message: format!("Failed to fetch friends: {}", e)
+                message: format!("Failed to fetch friends: {}", e),
             })?;
 
-        let response_data: serde_json::Value = response.json().await
-            .map_err(|e| AppError {
-                message: format!("Failed to parse friends response: {}", e)
-            })?;
+        let response_data: serde_json::Value = response.json().await.map_err(|e| AppError {
+            message: format!("Failed to parse friends response: {}", e),
+        })?;
 
         // Extraire le tableau d'amis de la réponse
         let friends = response_data["friends"]
             .as_array()
             .ok_or_else(|| AppError {
-                message: "Invalid friends response format".to_string()
+                message: "Invalid friends response format".to_string(),
             })?;
 
         // Désérialiser le tableau d'amis
-        serde_json::from_value(serde_json::Value::Array(friends.to_vec()))
-            .map_err(|e| AppError {
-                message: format!("Failed to parse friends data: {}", e)
-            })
+        serde_json::from_value(serde_json::Value::Array(friends.to_vec())).map_err(|e| AppError {
+            message: format!("Failed to parse friends data: {}", e),
+        })
     }
 }

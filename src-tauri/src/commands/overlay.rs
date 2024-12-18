@@ -1,5 +1,5 @@
 use crate::OverlayState;
-use tauri::{Manager, Emitter};
+use tauri::{Emitter, Manager};
 
 #[tauri::command]
 pub async fn toggle_overlay(state: tauri::State<'_, OverlayState>) -> Result<(), String> {

@@ -42,17 +42,12 @@ impl SteamAuth {
             self.api_key, steam_id
         );
 
-        let response = self.client
-            .get(&url)
-            .send()
-            .await
-            .map_err(|e| AppError {
-                message: format!("Failed to fetch Steam profile: {}", e)
-            })?;
+        let response = self.client.get(&url).send().await.map_err(|e| AppError {
+            message: format!("Failed to fetch Steam profile: {}", e),
+        })?;
 
-        response.text().await
-            .map_err(|e| AppError {
-                message: format!("Failed to read response: {}", e)
-            })
+        response.text().await.map_err(|e| AppError {
+            message: format!("Failed to read response: {}", e),
+        })
     }
 }

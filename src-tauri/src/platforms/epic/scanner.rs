@@ -1,5 +1,7 @@
 // Dans platforms/epic/scanner.rs
-use crate::models::{Game, GameInstallation, GameMedia, GameMetadata, GameResult, Platform, GameStats};
+use crate::models::{
+    Game, GameInstallation, GameMedia, GameMetadata, GameResult, GameStats, Platform,
+};
 use crate::utils::AppError;
 use serde::Deserialize;
 use std::fs;
