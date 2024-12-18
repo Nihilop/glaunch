@@ -41,7 +41,7 @@ jobs:
       - name: Setup environment variables
         shell: pwsh
         run: |
-          $envContent = Get-Content .env.production -Raw
+          $envContent = Get-Content "src-tauri/.env.production" -Raw
           $envContent = $envContent.Replace('%STEAM_API_KEY%', '${{ secrets.STEAM_API_KEY }}')
           $envContent = $envContent.Replace('%EPIC_CLIENT_ID%', '${{ secrets.EPIC_CLIENT_ID }}')
           $envContent = $envContent.Replace('%EPIC_CLIENT_SECRET%', '${{ secrets.EPIC_CLIENT_SECRET }}')

@@ -1,9 +1,16 @@
-const fs = require('fs');
-const { execSync } = require('child_process');
-const toml = require('@iarna/toml');
+// scripts/release.js
+import { readFileSync } from 'fs';
+import { execSync } from 'child_process';
+import { parse } from '@iarna/toml';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Lire la version du Cargo.toml
-const cargoToml = toml.parse(fs.readFileSync('./src-tauri/Cargo.toml', 'utf-8'));
+const cargoTomlPath = join(__dirname, '..', 'src-tauri', 'Cargo.toml');
+const cargoToml = parse(readFileSync(cargoTomlPath, 'utf-8'));
 const version = cargoToml.package.version;
 
 // Vérifier si le tag existe déjà
