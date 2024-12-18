@@ -1,0 +1,72 @@
+<template>
+  <nav class="w-16 z-50 h-screen absolute top-0 left-0 translate-y-0 transition-all duration-500">
+
+    <div
+      ref="mainNavRef"
+      class="flex flex-col h-full bg-primary/20 items-center gap-3 p-2 backdrop-blur-sm border-r border-gray-800"
+    >
+      <!-- Remplacer RouterLink par des div/buttons -->
+      <button
+        v-for="(item, index) in menuItems"
+        :key="item.path"
+        :class="[
+          'p-3 rounded-lg transition-all duration-200',
+          (isActive && activeIndex === index) && 'ring-2 ring-blue-500 bg-white/10'
+        ]"
+        @click="() => router.push(item.path)"
+      >
+        <component
+          :is="item.icon"
+          class="w-5 h-5 hover:scale-110 transition-all duration-500"
+        />
+      </button>
+    </div>
+  </nav>
+</template>
+
+<script setup lang="ts">
+import {useRegion, useZone} from '@/composables/KeyboardPlugin'
+import {useRoute, useRouter} from "vue-router";
+import {Home, Library, User} from "lucide-vue-next";
+import {ref, watch} from "vue";
+import AddGameModal from "@/components/AddGameModal.vue";
+
+const mainNavRef = ref(null)
+const isDetails = ref(false)
+const router = useRouter()
+const route = useRoute()
+const menuItems = ref([
+  { path: '/', icon: Home },
+  { path: '/list', icon: Library },
+  { path: '/settings', icon: User },
+  { path: '#', icon: AddGameModal },
+])
+
+
+const { regionId } = useRegion({
+  priority: 1,
+  persistent: true,
+  defaultZone: 'mainNav'
+})
+
+
+const { isActive, activeIndex } = useZone(mainNavRef, {
+  id: 'mainNav',
+  type: 'vertical',
+  memory: false,
+  onSelect: (index) => {
+    const item = menuItems.value[index]
+    if (item && item.path !== '#') {
+      router.push(item.path)
+    }
+  }
+})
+
+watch(
+  () => route.fullPath,
+  (newPath) => {
+    isDetails.value = newPath.includes('/details/');
+  },
+  { immediate: true } // Pour vérifier dès le montage du composant
+);
+</script>
