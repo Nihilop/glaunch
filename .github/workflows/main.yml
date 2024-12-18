@@ -24,10 +24,29 @@ jobs:
           profile: minimal
           override: true
 
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "src-tauri"
+          cache-on-failure: true
+
       - name: Install pnpm
         uses: pnpm/action-setup@v2
         with:
           version: latest
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path | tr -d '\n')" >> $GITHUB_ENV
+
+      - name: Cache pnpm dependencies
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
 
       - name: Get version from Cargo.toml
         id: get_version
@@ -49,7 +68,7 @@ jobs:
           $envContent = $envContent.Replace('%BATTLENET_CLIENT_SECRET%', '${{ secrets.BATTLENET_CLIENT_SECRET }}')
           $envContent = $envContent.Replace('%IGDB_CLIENT_ID%', '${{ secrets.IGDB_CLIENT_ID }}')
           $envContent = $envContent.Replace('%IGDB_CLIENT_SECRET%', '${{ secrets.IGDB_CLIENT_SECRET }}')
-          $envContent | Set-Content .env.production
+          $envContent | Set-Content "src-tauri/.env.production"
 
       - name: Install dependencies
         run: pnpm install
