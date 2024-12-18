@@ -131,25 +131,45 @@ pub fn run() {
             log_debug!("Setting up system tray");
 
             // Initialisation de la base de données et des composants
-            let database = rt.block_on(async { Database::new().await.map(Arc::new) })?;
+            log_info!("Initializing database...");
+            let database = match rt.block_on(async { Database::new().await }) {
+                Ok(db) => {
+                    log_info!("Database initialized successfully");
+                    Arc::new(db)
+                }
+                Err(e) => {
+                    log_error!("Failed to initialize database: {}", e);
+                    return Err(Box::new(e) as Box<dyn std::error::Error>);
+                }
+            };
 
             // Auth server setup
+            log_info!("Setting up auth server...");
             let auth_server = AuthServer::new(11111);
             std::thread::spawn(move || {
                 if let Err(e) = auth_server.start() {
-                    eprintln!("Error starting auth server: {}", e);
+                    log_error!("Error starting auth server: {}", e);
                 }
             });
 
             // Setup API keys
-            let igdb_client_id = env::var("IGDB_CLIENT_ID").unwrap_or_else(|_| String::new());
-            let igdb_client_secret = env::var("IGDB_CLIENT_SECRET").unwrap_or_else(|_| String::new());
+            log_info!("Loading API keys...");
+            let igdb_client_id = env::var("IGDB_CLIENT_ID").unwrap_or_else(|_| {
+                log_warn!("IGDB_CLIENT_ID not found in environment variables");
+                String::new()
+            });
+            let igdb_client_secret = env::var("IGDB_CLIENT_SECRET").unwrap_or_else(|_| {
+                log_warn!("IGDB_CLIENT_SECRET not found in environment variables");
+                String::new()
+            });
 
             // GameMonitor setup
+            log_info!("Setting up game monitor...");
             let game_monitor = Arc::new(GameMonitor::new(database.clone()));
             let monitor_clone = game_monitor.clone();
 
             rt.spawn(async move {
+                log_info!("Starting game monitor loop");
                 loop {
                     monitor_clone.start_monitoring();
                     tokio::time::sleep(Duration::from_secs(1)).await;
@@ -157,13 +177,15 @@ pub fn run() {
             });
 
             // GameManager setup
-            let game_manager = Arc::new(GameManager::new(
+            log_info!("Setting up game manager...");
+            let game_manager = GameManager::new(
                 database.clone(),
                 app.handle().clone(),
                 game_monitor.clone(),
                 igdb_client_id,
                 igdb_client_secret,
-            ).map_err(|e| e.to_string())?);
+            ).map_err(|e| Box::new(e) as Box<dyn std::error::Error>).map(Arc::new)?;
+            log_info!("Game manager initialized successfully");
 
             // State management
             let state = AppState::new(game_manager, game_monitor.clone());
