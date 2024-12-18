@@ -36,7 +36,7 @@
     "security": {
       "csp": {
         "default-src": ["'self'"],
-        "img-src": ["'self'", "asset:", "https://steamcommunity.com", "https://*.steampowered.com", "data:"],
+        "img-src": ["'self'", "asset:", "https://steamcommunity.com", "https://*.steampowered.com", "https://*.steamstatic.com", "data:"],
         "connect-src": ["'self'", "https://api.steampowered.com", "https://steamcommunity.com"],
         "style-src": ["'self'", "'unsafe-inline'"]
       },
