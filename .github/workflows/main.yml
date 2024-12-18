@@ -90,21 +90,12 @@ jobs:
           }
           echo "Versions match: $cargo_version"
 
-      - name: Generate changelog
-        id: changelog
-        uses: scottbrenner/generate-changelog-action@master
-        env:
-          REPO: ${{ github.repository }}
-
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           name: GLaunch v${{ env.VERSION }}
           draft: false
           prerelease: false
-          body: |
-            ## What's Changed
-            ${{ steps.changelog.outputs.changelog }}
           files: |
             src-tauri/target/release/bundle/msi/*.msi
         env:
