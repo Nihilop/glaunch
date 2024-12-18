@@ -5,15 +5,6 @@ on:
     tags:
       - 'v*'
 
-env:
-  STEAM_API_KEY: ${{ secrets.STEAM_API_KEY }}
-  EPIC_CLIENT_ID: ${{ secrets.EPIC_CLIENT_ID }}
-  EPIC_CLIENT_SECRET: ${{ secrets.EPIC_CLIENT_SECRET }}
-  BATTLENET_CLIENT_ID: ${{ secrets.BATTLENET_CLIENT_ID }}
-  BATTLENET_CLIENT_SECRET: ${{ secrets.BATTLENET_CLIENT_SECRET }}
-  IGDB_CLIENT_ID: ${{ secrets.IGDB_CLIENT_ID }}
-  IGDB_CLIENT_SECRET: ${{ secrets.IGDB_CLIENT_SECRET }}
-
 jobs:
   build:
     runs-on: windows-latest
@@ -38,34 +29,47 @@ jobs:
         with:
           version: latest
 
-      - name: Get version from tag
+      - name: Get version from Cargo.toml
         id: get_version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+        shell: pwsh
+        run: |
+          $cargoToml = Get-Content "src-tauri/Cargo.toml" -Raw
+          $version = Select-String -Pattern 'version = "(.*?)"' -InputObject $cargoToml | ForEach-Object { $_.Matches.Groups[1].Value }
+          echo "VERSION=$version" >> $env:GITHUB_ENV
+          echo "Current version: $version"
+
+      - name: Setup environment variables
+        shell: pwsh
+        run: |
+          $envContent = Get-Content .env.production -Raw
+          $envContent = $envContent.Replace('%STEAM_API_KEY%', '${{ secrets.STEAM_API_KEY }}')
+          $envContent = $envContent.Replace('%EPIC_CLIENT_ID%', '${{ secrets.EPIC_CLIENT_ID }}')
+          $envContent = $envContent.Replace('%EPIC_CLIENT_SECRET%', '${{ secrets.EPIC_CLIENT_SECRET }}')
+          $envContent = $envContent.Replace('%BATTLENET_CLIENT_ID%', '${{ secrets.BATTLENET_CLIENT_ID }}')
+          $envContent = $envContent.Replace('%BATTLENET_CLIENT_SECRET%', '${{ secrets.BATTLENET_CLIENT_SECRET }}')
+          $envContent = $envContent.Replace('%IGDB_CLIENT_ID%', '${{ secrets.IGDB_CLIENT_ID }}')
+          $envContent = $envContent.Replace('%IGDB_CLIENT_SECRET%', '${{ secrets.IGDB_CLIENT_SECRET }}')
+          $envContent | Set-Content .env.production
 
       - name: Install dependencies
         run: pnpm install
 
       - name: Build
         run: pnpm tauri build
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
-        with:
-          name: GLaunch v${{ env.VERSION }}
-          draft: false
-          prerelease: false
-          files: |
-            src-tauri/target/release/bundle/msi/*.msi
         env:
-          GITHUB_TOKEN: ${{ secrets.PAT }}
+          RUST_BACKTRACE: 1
+          RUST_LOG: "debug"
 
-  changelog:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+      - name: Verify version matches
+        shell: pwsh
+        run: |
+          $tag_version = "${{ github.ref }}".Replace('refs/tags/v', '')
+          $cargo_version = $env:VERSION
+          if ($tag_version -ne $cargo_version) {
+            Write-Error "Version mismatch! Tag version ($tag_version) does not match Cargo.toml version ($cargo_version)"
+            exit 1
+          }
+          echo "Versions match: $cargo_version"
 
       - name: Generate changelog
         id: changelog
@@ -73,12 +77,16 @@ jobs:
         env:
           REPO: ${{ github.repository }}
 
-      - name: Update Release Notes
+      - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ github.ref }}
+          name: GLaunch v${{ env.VERSION }}
+          draft: false
+          prerelease: false
           body: |
             ## What's Changed
             ${{ steps.changelog.outputs.changelog }}
+          files: |
+            src-tauri/target/release/bundle/msi/*.msi
         env:
           GITHUB_TOKEN: ${{ secrets.PAT }}

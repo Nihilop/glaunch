@@ -30,6 +30,7 @@ use monitor::GameMonitor;
 use overlay::GameOverlay;
 use utils::settings::SettingsManager;
 use utils::AppError;
+use crate::utils::Logger;
 
 // États de l'application
 pub struct AppState {
@@ -58,6 +59,10 @@ pub fn run() {
         .expect("Failed to create Tokio runtime");
     let rt = Arc::new(rt);
 
+    if let Err(e) = Logger::init() {
+        eprintln!("Failed to initialize logger: {}", e);
+    }
+
     let builder = tauri::Builder::default()
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
@@ -76,6 +81,7 @@ pub fn run() {
     builder
         .setup(move |app| {
             dotenv().ok();
+            log_info!("Environment variables loaded");
 
             // Configuration du tray
             let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
@@ -121,6 +127,8 @@ pub fn run() {
                     }
                 })
                 .build(app)?;
+
+            log_debug!("Setting up system tray");
 
             // Initialisation de la base de données et des composants
             let database = rt.block_on(async { Database::new().await.map(Arc::new) })?;
@@ -178,6 +186,7 @@ pub fn run() {
                 // Vérifier les paramètres sans async/await
                 let settings = SettingsManager::new().unwrap();
                 if settings.get_settings().minimize_to_tray {
+                    log_info!("Minimizing to tray instead of closing");
                     window.hide().unwrap();
                     api.prevent_close();
                 }
@@ -221,6 +230,7 @@ pub fn run() {
         .expect("error while building tauri application")
         .run(|_app_handle, event| {
             if let tauri::RunEvent::ExitRequested { api, .. } = event {
+                log_info!("Application exit requested");
                 api.prevent_exit();
             }
         });

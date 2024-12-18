@@ -5,6 +5,9 @@ pub mod acf;
 pub mod cache;
 pub mod executable_finder;
 pub mod vdf;
+pub mod logger;
+
+pub use logger::Logger;
 
 #[derive(Debug)]
 pub struct AppError {

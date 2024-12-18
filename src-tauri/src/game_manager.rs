@@ -14,6 +14,8 @@ use std::time::SystemTime;
 use tauri::AppHandle;
 use tokio::sync::Mutex;
 use std::path::Path;
+use crate::log_info;
+use crate::log_debug;
 use crate::models::GameStats;
 use crate::models::GameMedia;
 use crate::models::GameMetadata;
@@ -73,7 +75,9 @@ impl GameManager {
     }
 
     pub async fn scan_all_platforms(&self, use_cache: bool) -> GameResult<Vec<Game>> {
+        log_info!("Scanning all platforms, use_cache: {}", use_cache);
         if use_cache {
+            log_debug!("Using cached game list");
             let games = self.database.games().get_all_games().await?;
             return Ok(games);
         }
@@ -83,6 +87,7 @@ impl GameManager {
 
         for platform in &self.platforms {
             let platform_name = platform.platform_name();
+            log_info!("Scanning platform: {}", platform_name);
 
             match platform.scan_games().await {
                 Ok(scanned_games) => {
