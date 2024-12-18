@@ -15,12 +15,8 @@ env:
   IGDB_CLIENT_SECRET: ${{ secrets.IGDB_CLIENT_SECRET }}
 
 jobs:
-  release:
-    strategy:
-      matrix:
-        platform: [windows-latest]
-
-    runs-on: ${{ matrix.platform }}
+  build:
+    runs-on: windows-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -63,6 +59,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.PAT }}
 
+  changelog:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Generate changelog
         id: changelog
         uses: scottbrenner/generate-changelog-action@master
@@ -72,6 +76,7 @@ jobs:
       - name: Update Release Notes
         uses: softprops/action-gh-release@v1
         with:
+          tag_name: ${{ github.ref }}
           body: |
             ## What's Changed
             ${{ steps.changelog.outputs.changelog }}
