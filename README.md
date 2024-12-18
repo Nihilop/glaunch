@@ -2,7 +2,11 @@
 
 GLaunch is a modern, cross-platform game launcher built with Tauri and Vue.js. It provides a unified interface to manage and launch games from different platforms like Steam, Epic Games, and Battle.net. With its sleek design and keyboard-first navigation, GLaunch offers a seamless gaming experience.
 
-![GLaunch Screenshot](.github/assets/video.mp4)
+https://github.com/user-attachments/assets/1b8e9f65-aeff-4073-b212-998fac58fc7f
+
+
+
+
 
 ## 🎮 Features
 
