@@ -74,3 +74,14 @@ pub struct CustomGameConfig {
     pub platform: String,
     pub icon_path: Option<String>,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UpdateStatus {
+    pub current_version: String,
+    pub latest_version: Option<String>,
+    pub update_available: bool,
+    pub last_check: Option<i64>,
+    pub download_url: Option<String>,
+    pub release_notes: Option<String>,
+    pub checking: bool,
+}

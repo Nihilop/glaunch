@@ -93,7 +93,9 @@
       "endpoints": [
         "https://github.com/Nihilop/glaunch/releases/latest/download/latest.json"
       ],
-      "dialog": true,
+      "windows": {
+        "installMode": "passive"
+      },
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDc5NTFBOTM3RjA3MzRDREQKUldUZFRIUHdONmxSZVF0V29GbzZlY1V0ZUdhS1BOY3RyaGhDREgwRjc1WHBKblZBNldZeG1pZmgK"
     }
   }

@@ -97,6 +97,31 @@ jobs:
           }
           echo "Versions match: $cargo_version"
 
+      - name: Generate updater signature
+        run: |
+          $env:TAURI_SIGNING_PRIVATE_KEY = '${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}'
+          pnpm tauri signer generate -w ./signing-key.key
+
+      - name: Generate latest.json
+        shell: pwsh
+        run: |
+          $msiPath = Get-ChildItem "src-tauri/target/release/bundle/msi/*.msi" | Select-Object -First 1
+          $signature = Get-Content "$($msiPath.FullName).sig"
+          
+          $json = @{
+            version = "v${{ env.VERSION }}"
+            notes = "Release v${{ env.VERSION }}"
+            pub_date = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+            platforms = @{
+              "windows-x86_64" = @{
+                signature = $signature
+                url = "https://github.com/Nihilop/glaunch/releases/download/v${{ env.VERSION }}/$($msiPath.Name)"
+              }
+            }
+          }
+          
+          $json | ConvertTo-Json -Depth 10 | Set-Content "latest.json"
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
@@ -105,5 +130,6 @@ jobs:
           prerelease: false
           files: |
             src-tauri/target/release/bundle/msi/*.msi
+            latest.json
         env:
           GITHUB_TOKEN: ${{ secrets.PAT }}

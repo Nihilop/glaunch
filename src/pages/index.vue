@@ -103,8 +103,9 @@
         </div>
       </section>
       <div class="fixed bottom-4 right-6 z-40">
-        <Button variant="ghost" @click="loadGames(false)" class=" hover:bg-white/20 backdrop-blur hover:text-white">
-          <RefreshCcw />
+        <Button :disabled="isLoading" variant="ghost" @click="loadGames(false)" class="hover:bg-white/20 backdrop-blur hover:text-white">
+          <RefreshCcw :class="{'animate-rotate' : isLoading}" />
+          {{ isLoading ? 'Chargement..' : '' }}
         </Button>
       </div>
     </div>
@@ -136,6 +137,7 @@ const games = ref<any[]>([])
 const activeTag = ref<string | null>(null)
 const query = ref<string | null>(null)
 const initialLoading = ref(true)
+const isLoading = ref(false)
 const loadingMedia = ref<Record<string, boolean>>({})
 const Shifted = useKeyModifier('Shift')
 
@@ -196,6 +198,7 @@ const loadGames = async (useCache = true) => {
     }))
 
     if (!useCache) {
+      isLoading.value = true
       for (const game of games.value) {
         loadingMedia.value[game.id] = true
         try {
@@ -213,6 +216,8 @@ const loadGames = async (useCache = true) => {
           loadingMedia.value[game.id] = false
         }
       }
+      isLoading.value = false
+      window.location.reload()
     }
   } catch (error) {
     console.error('Failed to load games:', error)
@@ -296,5 +301,15 @@ watch(filteredGames, () => {
   position: absolute;
   opacity: 0;
   transform: translateY(-20px);
+}
+
+.animate-rotate {
+  animation: rotate 2s infinite;
+}
+
+@keyframes rotate {
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>
