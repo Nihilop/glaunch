@@ -6,6 +6,7 @@ use crate::services::igdb::IgdbGame;
 use crate::services::IgdbSearchResult;
 use crate::utils::AppError;
 use std::sync::Arc;
+use crate::log_info;
 
 pub struct MetadataService {
     database: Arc<Database>,
@@ -13,12 +14,18 @@ pub struct MetadataService {
 }
 
 impl MetadataService {
-    pub fn new(
-        database: Arc<Database>,
-        client_id: String,
-        client_secret: String,
-    ) -> Result<Self, AppError> {
-        // Obtenir le token d'accès IGDB
+    pub fn new(database: Arc<Database>, client_id: String, client_secret: String) -> Result<Self, AppError> {
+        // Vérifier si les clés sont présentes
+        if client_id.is_empty() || client_secret.is_empty() {
+            log_info!("IGDB credentials not provided, metadata service will be limited");
+            return Ok(Self {
+                database,
+                igdb: Arc::new(IgdbService::new(client_id, String::new())?),
+            });
+        }
+
+        // Si les clés sont présentes, obtenir le token d'accès IGDB
+        log_info!("Initializing IGDB service with credentials");
         let access_token = tokio::runtime::Runtime::new()
             .unwrap()
             .block_on(Self::get_twitch_access_token(&client_id, &client_secret))?;
@@ -104,6 +111,9 @@ impl MetadataService {
         client_id: &str,
         client_secret: &str,
     ) -> Result<String, AppError> {
+        if client_id.is_empty() || client_secret.is_empty() {
+            return Ok(String::new());
+        }
         let client = reqwest::Client::new();
         let response = client
             .post("https://id.twitch.tv/oauth2/token")

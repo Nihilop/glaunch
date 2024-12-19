@@ -171,10 +171,9 @@ pub fn run() {
 
             rt.spawn(async move {
                 log_info!("Starting game monitor loop");
-                loop {
-                    monitor_clone.start_monitoring();
-                    tokio::time::sleep(Duration::from_secs(1)).await;
-                }
+                // On lance simplement le monitoring et on laisse la fonction gérer sa propre boucle
+                monitor_clone.start_monitoring();
+                // Plus besoin de gérer la boucle ici car elle est dans start_monitoring
             });
 
             // GameManager setup
@@ -185,9 +184,10 @@ pub fn run() {
                 game_monitor.clone(),
                 igdb_client_id,
                 igdb_client_secret,
-            )
-            .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)
-            .map(Arc::new)?;
+            ).map_err(|e| {
+                log_error!("Failed to create game manager: {}", e);
+                Box::new(e) as Box<dyn std::error::Error>
+            }).map(Arc::new)?;
             log_info!("Game manager initialized successfully");
 
             // State management

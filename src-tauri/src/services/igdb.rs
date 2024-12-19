@@ -5,6 +5,7 @@ use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::time::{Duration, Instant};
 use tokio::time::sleep;
+use crate::log_info;
 
 const IGDB_API_URL: &str = "https://api.igdb.com/v4";
 const RATE_LIMIT_DELAY: Duration = Duration::from_millis(250); // 4 requêtes par seconde max
@@ -69,6 +70,15 @@ pub struct IgdbSearchResult {
 
 impl IgdbService {
     pub fn new(client_id: String, access_token: String) -> Result<Self, AppError> {
+        if client_id.is_empty() || access_token.is_empty() {
+            log_info!("Creating limited IGDB service without authentication");
+            return Ok(Self {
+                client: Client::new(),
+                client_id,
+                access_token,
+                media_cache: MediaCache::new()?,
+            });
+        }
         Ok(Self {
             client: Client::new(),
             client_id,
@@ -78,6 +88,11 @@ impl IgdbService {
     }
 
     pub async fn search_games(&self, query: &str) -> Result<Vec<IgdbSearchResult>, AppError> {
+        // Vérifier si le service est authentifié
+        if self.client_id.is_empty() || self.access_token.is_empty() {
+            log_info!("IGDB search skipped: no authentication");
+            return Ok(Vec::new());
+        }
         Self::enforce_rate_limit().await;
 
         let body = format!(

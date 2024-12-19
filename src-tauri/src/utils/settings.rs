@@ -44,7 +44,19 @@ impl SettingsManager {
             })?;
             serde_json::from_str(&content).unwrap_or_default()
         } else {
-            AppSettings::default()
+            // Créer les paramètres par défaut
+            let default_settings = AppSettings::default();
+
+            // Les sauvegarder dans le fichier
+            let content = serde_json::to_string_pretty(&default_settings).map_err(|e| AppError {
+                message: format!("Failed to serialize default settings: {}", e),
+            })?;
+
+            fs::write(&settings_path, content).map_err(|e| AppError {
+                message: format!("Failed to write default settings file: {}", e),
+            })?;
+
+            default_settings
         };
 
         Ok(Self {

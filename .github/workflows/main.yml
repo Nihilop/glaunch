@@ -74,10 +74,17 @@ jobs:
         run: pnpm install
 
       - name: Build
-        run: pnpm tauri build
         env:
+          VITE_STEAM_API_KEY: ${{ secrets.STEAM_API_KEY }}
+          VITE_EPIC_CLIENT_ID: ${{ secrets.EPIC_CLIENT_ID }}
+          VITE_EPIC_CLIENT_SECRET: ${{ secrets.EPIC_CLIENT_SECRET }}
+          VITE_BATTLENET_CLIENT_ID: ${{ secrets.BATTLENET_CLIENT_ID }}
+          VITE_BATTLENET_CLIENT_SECRET: ${{ secrets.BATTLENET_CLIENT_SECRET }}
+          VITE_IGDB_CLIENT_ID: ${{ secrets.IGDB_CLIENT_ID }}
+          VITE_IGDB_CLIENT_SECRET: ${{ secrets.IGDB_CLIENT_SECRET }}
           RUST_BACKTRACE: 1
           RUST_LOG: "debug"
+        run: pnpm tauri build
 
       - name: Verify version matches
         shell: pwsh
