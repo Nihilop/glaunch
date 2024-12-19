@@ -20,14 +20,30 @@ impl CompiledSecrets {
         let is_dev = env::var("TAURI_ENV").unwrap_or_default() == "dev";
         log_debug!("Running in {} mode", if is_dev { "development" } else { "production" });
 
+
+        log_debug!("Loading IGDB_CLIENT_ID...");
+        let igdb_client_id = env::var("IGDB_CLIENT_ID").map_err(|_| AppError { message: "IGDB_CLIENT_ID not set".to_string() })?;
+        log_debug!("Loading IGDB_CLIENT_SECRET...");
+        let igdb_client_secret = env::var("IGDB_CLIENT_SECRET").map_err(|_| AppError { message: "IGDB_CLIENT_SECRET not set".to_string() })?;
+        log_debug!("Loading STEAM_API_KEY...");
+        let steam_api_key = env::var("STEAM_API_KEY").map_err(|_| AppError { message: "STEAM_API_KEY not set".to_string() })?;
+        log_debug!("Loading EPIC_CLIENT_ID...");
+        let epic_client_id = env::var("EPIC_CLIENT_ID").map_err(|_| AppError { message: "EPIC_CLIENT_ID not set".to_string() })?;
+        log_debug!("Loading EPIC_CLIENT_ID_SECRET...");
+        let epic_client_id_secret = env::var("EPIC_CLIENT_ID_SECRET").map_err(|_| AppError { message: "EPIC_CLIENT_ID_SECRET not set".to_string() })?;
+        log_debug!("Loading BATTLENET_CLIENT_ID...");
+        let battlenet_client_id = env::var("BATTLENET_CLIENT_ID").map_err(|_| AppError { message: "BATTLENET_CLIENT_ID not set".to_string() })?;
+        log_debug!("Loading BATTLENET_CLIENT_SECRET...");
+        let battlenet_client_secret = env::var("BATTLENET_CLIENT_SECRET").map_err(|_| AppError { message: "BATTLENET_CLIENT_SECRET not set".to_string() })?;
+
         let secrets = Self {
-            igdb_client_id: env::var("IGDB_CLIENT_ID").map_err(|_| AppError { message: "IGDB_CLIENT_ID not set".to_string() })?,
-            igdb_client_secret: env::var("IGDB_CLIENT_SECRET").map_err(|_| AppError { message: "IGDB_CLIENT_SECRET not set".to_string() })?,
-            steam_api_key: env::var("STEAM_API_KEY").map_err(|_| AppError { message: "STEAM_API_KEY not set".to_string() })?,
-            epic_client_id: env::var("EPIC_CLIENT_ID").map_err(|_| AppError { message: "EPIC_CLIENT_ID not set".to_string() })?,
-            epic_client_id_secret: env::var("EPIC_CLIENT_ID_SECRET").map_err(|_| AppError { message: "EPIC_CLIENT_ID_SECRET not set".to_string() })?,
-            battlenet_client_id: env::var("BATTLENET_CLIENT_ID").map_err(|_| AppError { message: "BATTLENET_CLIENT_ID not set".to_string() })?,
-            battlenet_client_secret: env::var("BATTLENET_CLIENT_SECRET").map_err(|_| AppError { message: "BATTLENET_CLIENT_SECRET not set".to_string() })?,
+          igdb_client_id,
+          igdb_client_secret,
+          steam_api_key,
+          epic_client_id,
+          epic_client_id_secret,
+          battlenet_client_id,
+          battlenet_client_secret,
         };
 
         log_debug!("IGDB Client ID present: {}", !secrets.igdb_client_id.is_empty());
