@@ -25,7 +25,9 @@ mod utils;
 use crate::utils::Logger;
 use auth::AuthServer;
 use db::Database;
-use dotenv::dotenv;
+use dotenv::from_filename;
+use std::fs;
+use std::path::Path;
 use game_manager::GameManager;
 use monitor::GameMonitor;
 use overlay::GameOverlay;
@@ -81,11 +83,20 @@ pub fn run() {
 
     builder
         .setup(move |app| {
-            // Charger les variables d'environnement à partir d'un fichier .env uniquement en mode développement
-            dotenv().ok();
-            log_info!("Environment variables loaded from .env file");
 
+            let env_var = env::var("TAURI_ENV").unwrap_or_else(|_| "prod".to_string());
+            let env_path = if env_var == "dev" {
+                Path::new(".env")
+            } else {
+                Path::new(".env.production")
+            };
 
+            if env_path.exists() {
+                from_filename(env_path).ok();
+                log_info!("Environment variables loaded from {} file", env_path.display());
+            } else {
+                log_error!("Environment file not found: {}", env_path.display());
+            }
             // Configuration du tray
             let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
             let settings = MenuItem::with_id(app, "settings", "Settings", true, None::<&str>)?;

@@ -854,12 +854,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "deep_link"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ab9861f1981bc4cf88a3997daf20eca92fac1be699e0cdaa8272af56ecfc594f"
-
-[[package]]
 name = "der"
 version = "0.7.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1617,12 +1611,11 @@ dependencies = [
 
 [[package]]
 name = "glaunch"
-version = "0.1.9"
+version = "0.2.0"
 dependencies = [
  "async-trait",
  "base64 0.21.7",
  "chrono",
- "deep_link",
  "dirs",
  "dotenv",
  "lazy_static",
