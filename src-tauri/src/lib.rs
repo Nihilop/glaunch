@@ -84,16 +84,44 @@ pub fn run() {
     builder
         .setup(move |app| {
 
-            let env_var = env::var("TAURI_ENV").unwrap_or_else(|_| "prod".to_string());
+            let env_var = env::var("TAURI_ENV").unwrap_or_else(|_| {
+                log_debug!("TAURI_ENV not set, defaulting to prod");
+                "prod".to_string()
+            });
+
+            // Déterminer le chemin du fichier .env
             let env_path = if env_var == "dev" {
-                Path::new(".env")
+                log_debug!("Using development environment");
+                Path::new(".env").to_path_buf()
             } else {
-                Path::new(".env.production")
+                log_debug!("Using production environment");
+                Path::new(".env.production").to_path_buf()
             };
 
             if env_path.exists() {
-                from_filename(env_path).ok();
-                log_info!("Environment variables loaded from {} file", env_path.display());
+                match fs::read_to_string(&env_path) {
+                    Ok(content) => {
+                        let mut vars_loaded = 0;
+                        for line in content.lines() {
+                            let line = line.trim();
+                            if line.is_empty() || line.starts_with('#') {
+                                continue;
+                            }
+
+                            if let Some((key, value)) = line.split_once('=') {
+                                let key = key.trim();
+                                let value = value.trim();
+                                env::set_var(key, value);
+                                vars_loaded += 1;
+                                log_debug!("Loaded environment variable: {}", key);
+                            }
+                        }
+                        log_info!("Successfully loaded {} environment variables from {}", vars_loaded, env_path.display());
+                    }
+                    Err(e) => {
+                        log_error!("Failed to read environment file {}: {}", env_path.display(), e);
+                    }
+                }
             } else {
                 log_error!("Environment file not found: {}", env_path.display());
             }
