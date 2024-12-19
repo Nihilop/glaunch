@@ -73,15 +73,21 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+
+      - name: Set up Tauri signing key
+        run: |
+          $env:TAURI_SIGNING_PRIVATE_KEY = '${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}'
+          $env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD = '${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}'
+
       - name: Build
         env:
-          VITE_STEAM_API_KEY: ${{ secrets.STEAM_API_KEY }}
-          VITE_EPIC_CLIENT_ID: ${{ secrets.EPIC_CLIENT_ID }}
-          VITE_EPIC_CLIENT_SECRET: ${{ secrets.EPIC_CLIENT_SECRET }}
-          VITE_BATTLENET_CLIENT_ID: ${{ secrets.BATTLENET_CLIENT_ID }}
-          VITE_BATTLENET_CLIENT_SECRET: ${{ secrets.BATTLENET_CLIENT_SECRET }}
-          VITE_IGDB_CLIENT_ID: ${{ secrets.IGDB_CLIENT_ID }}
-          VITE_IGDB_CLIENT_SECRET: ${{ secrets.IGDB_CLIENT_SECRET }}
+          STEAM_API_KEY: ${{ secrets.STEAM_API_KEY }}
+          EPIC_CLIENT_ID: ${{ secrets.EPIC_CLIENT_ID }}
+          EPIC_CLIENT_SECRET: ${{ secrets.EPIC_CLIENT_SECRET }}
+          BATTLENET_CLIENT_ID: ${{ secrets.BATTLENET_CLIENT_ID }}
+          BATTLENET_CLIENT_SECRET: ${{ secrets.BATTLENET_CLIENT_SECRET }}
+          IGDB_CLIENT_ID: ${{ secrets.IGDB_CLIENT_ID }}
+          IGDB_CLIENT_SECRET: ${{ secrets.IGDB_CLIENT_SECRET }}
           RUST_BACKTRACE: 1
           RUST_LOG: "debug"
         run: pnpm tauri build
@@ -96,11 +102,6 @@ jobs:
             exit 1
           }
           echo "Versions match: $cargo_version"
-
-      - name: Generate updater signature
-        run: |
-          $env:TAURI_SIGNING_PRIVATE_KEY = '${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}'
-          pnpm tauri signer generate -w ./signing-key.key
 
       - name: Generate latest.json
         shell: pwsh
@@ -130,6 +131,7 @@ jobs:
           prerelease: false
           files: |
             src-tauri/target/release/bundle/msi/*.msi
+            src-tauri/target/release/bundle/msi/*.sig
             latest.json
         env:
           GITHUB_TOKEN: ${{ secrets.PAT }}
