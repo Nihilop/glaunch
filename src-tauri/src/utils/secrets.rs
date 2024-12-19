@@ -18,6 +18,8 @@ pub struct CompiledSecrets {
 impl CompiledSecrets {
     pub fn new() -> Self {
         let is_dev = std::env::var("TAURI_ENV").unwrap_or_default() == "dev";
+        log_debug!("Running in {} mode", if is_dev { "development" } else { "production" });
+        log_debug!("IGDB Client ID present: {}", !std::env::var("IGDB_CLIENT_ID").unwrap_or_default().is_empty());
 
         if is_dev {
             log_debug!("Running in development mode, using .env file");

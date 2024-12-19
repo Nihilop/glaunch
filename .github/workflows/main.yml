@@ -24,7 +24,6 @@ jobs:
           toolchain: stable
           profile: minimal
           override: true
-
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
         with:
@@ -62,6 +61,7 @@ jobs:
         shell: pwsh
         run: |
           $envContent = Get-Content "src-tauri/.env.production" -Raw
+          Write-Output "Original env content length: $($envContent.Length)"
           $envContent = $envContent.Replace('%STEAM_API_KEY%', '${{ secrets.STEAM_API_KEY }}')
           $envContent = $envContent.Replace('%EPIC_CLIENT_ID%', '${{ secrets.EPIC_CLIENT_ID }}')
           $envContent = $envContent.Replace('%EPIC_CLIENT_SECRET%', '${{ secrets.EPIC_CLIENT_SECRET }}')
@@ -69,11 +69,18 @@ jobs:
           $envContent = $envContent.Replace('%BATTLENET_CLIENT_SECRET%', '${{ secrets.BATTLENET_CLIENT_SECRET }}')
           $envContent = $envContent.Replace('%IGDB_CLIENT_ID%', '${{ secrets.IGDB_CLIENT_ID }}')
           $envContent = $envContent.Replace('%IGDB_CLIENT_SECRET%', '${{ secrets.IGDB_CLIENT_SECRET }}')
+          Write-Output "Modified env content length: $($envContent.Length)"
           $envContent | Set-Content "src-tauri/.env.production"
-
+          Write-Output "Final env content contains IGDB_CLIENT_ID: $($finalContent -match 'IGDB_CLIENT_ID')"
       - name: Install dependencies
         run: pnpm install
 
+      - name: Debug environment variables
+        run: |
+          echo "IGDB_CLIENT_ID length: ${#IGDB_CLIENT_ID}"
+          echo "Environment variables are set: $([bool]$env:IGDB_CLIENT_ID)"
+        env:
+          IGDB_CLIENT_ID: ${{ secrets.IGDB_CLIENT_ID }}
 
       - name: Set up Tauri signing key
         run: |
@@ -93,7 +100,9 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
           RUST_BACKTRACE: 1
           RUST_LOG: "debug"
-        run: pnpm tauri build
+        run: |
+          echo "Building with IGDB_CLIENT_ID set: $([bool]$env:IGDB_CLIENT_ID)"
+          pnpm tauri build
 
       - name: Verify version matches
         shell: pwsh
