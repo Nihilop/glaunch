@@ -7,7 +7,7 @@ use tauri::{
 };
 use tauri_plugin_deep_link::DeepLinkExt;
 use tokio::time::Duration;
-
+use crate::utils::secrets::SecretsManager;
 // Modules internes
 mod api;
 mod auth;
@@ -83,47 +83,19 @@ pub fn run() {
 
     builder
         .setup(move |app| {
+            let secrets_manager = SecretsManager::new("glaunch");
 
-            let env_var = env::var("TAURI_ENV").unwrap_or_else(|_| {
-                log_debug!("TAURI_ENV not set, defaulting to prod");
-                "prod".to_string()
-            });
+            // Valider les secrets requis
+            if let Err(e) = secrets_manager.validate_required_secrets() {
+                log_error!("Failed to validate secrets: {}", e);
+                // Décider si vous voulez continuer ou non
+            }
 
-            // Déterminer le chemin du fichier .env
-            let env_path = if env_var == "dev" {
-                log_debug!("Using development environment");
-                Path::new(".env").to_path_buf()
-            } else {
-                log_debug!("Using production environment");
-                Path::new(".env.production").to_path_buf()
-            };
-
-            if env_path.exists() {
-                match fs::read_to_string(&env_path) {
-                    Ok(content) => {
-                        let mut vars_loaded = 0;
-                        for line in content.lines() {
-                            let line = line.trim();
-                            if line.is_empty() || line.starts_with('#') {
-                                continue;
-                            }
-
-                            if let Some((key, value)) = line.split_once('=') {
-                                let key = key.trim();
-                                let value = value.trim();
-                                env::set_var(key, value);
-                                vars_loaded += 1;
-                                log_debug!("Loaded environment variable: {}", key);
-                            }
-                        }
-                        log_info!("Successfully loaded {} environment variables from {}", vars_loaded, env_path.display());
-                    }
-                    Err(e) => {
-                        log_error!("Failed to read environment file {}: {}", env_path.display(), e);
-                    }
+            // Debug les variables après chargement
+            for (key, _) in env::vars() {
+                if key.contains("IGDB") || key.contains("STEAM") || key.contains("EPIC") || key.contains("BATTLENET") {
+                    log_debug!("After loading env file - Found env var: {}", key);
                 }
-            } else {
-                log_error!("Environment file not found: {}", env_path.display());
             }
             // Configuration du tray
             let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
@@ -196,14 +168,8 @@ pub fn run() {
 
             // Setup API keys
             log_info!("Loading API keys...");
-            let igdb_client_id = env::var("IGDB_CLIENT_ID").unwrap_or_else(|_| {
-                log_warn!("IGDB_CLIENT_ID not found in environment variables");
-                String::new()
-            });
-            let igdb_client_secret = env::var("IGDB_CLIENT_SECRET").unwrap_or_else(|_| {
-                log_warn!("IGDB_CLIENT_SECRET not found in environment variables");
-                String::new()
-            });
+            let igdb_client_id = secrets_manager.get_compiled_secret("IGDB_CLIENT_ID")?;
+            let igdb_client_secret = secrets_manager.get_compiled_secret("IGDB_CLIENT_SECRET")?;
 
             // GameMonitor setup
             log_info!("Setting up game monitor...");

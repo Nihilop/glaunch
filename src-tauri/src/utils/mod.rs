@@ -6,6 +6,7 @@ pub mod executable_finder;
 pub mod logger;
 pub mod settings;
 pub mod vdf;
+pub mod secrets;
 
 pub use logger::Logger;
 
@@ -14,17 +15,24 @@ pub struct AppError {
     pub message: String,
 }
 
-impl fmt::Display for AppError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl std::fmt::Display for AppError {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "{}", self.message)
     }
 }
 
-impl Error for AppError {}
+impl std::error::Error for AppError {}
 
+// Garder une seule implémentation From<String>
 impl From<String> for AppError {
     fn from(message: String) -> Self {
         Self { message }
+    }
+}
+
+impl From<&str> for AppError {
+    fn from(message: &str) -> Self {
+        Self { message: message.to_string() }
     }
 }
 
