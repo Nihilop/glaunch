@@ -57,21 +57,6 @@ jobs:
           echo "VERSION=$version" >> $env:GITHUB_ENV
           echo "Current version: $version"
 
-      - name: Setup environment variables
-        shell: pwsh
-        run: |
-          $envContent = Get-Content "src-tauri/.env.production" -Raw
-          Write-Output "Original env content length: $($envContent.Length)"
-          $envContent = $envContent.Replace('%STEAM_API_KEY%', '${{ secrets.STEAM_API_KEY }}')
-          $envContent = $envContent.Replace('%EPIC_CLIENT_ID%', '${{ secrets.EPIC_CLIENT_ID }}')
-          $envContent = $envContent.Replace('%EPIC_CLIENT_SECRET%', '${{ secrets.EPIC_CLIENT_SECRET }}')
-          $envContent = $envContent.Replace('%BATTLENET_CLIENT_ID%', '${{ secrets.BATTLENET_CLIENT_ID }}')
-          $envContent = $envContent.Replace('%BATTLENET_CLIENT_SECRET%', '${{ secrets.BATTLENET_CLIENT_SECRET }}')
-          $envContent = $envContent.Replace('%IGDB_CLIENT_ID%', '${{ secrets.IGDB_CLIENT_ID }}')
-          $envContent = $envContent.Replace('%IGDB_CLIENT_SECRET%', '${{ secrets.IGDB_CLIENT_SECRET }}')
-          Write-Output "Modified env content length: $($envContent.Length)"
-          $envContent | Set-Content "src-tauri/.env.production"
-          Write-Output "Final env content contains IGDB_CLIENT_ID: $($finalContent -match 'IGDB_CLIENT_ID')"
       - name: Install dependencies
         run: pnpm install
 
@@ -91,7 +76,7 @@ jobs:
         env:
           STEAM_API_KEY: ${{ secrets.STEAM_API_KEY }}
           EPIC_CLIENT_ID: ${{ secrets.EPIC_CLIENT_ID }}
-          EPIC_CLIENT_SECRET: ${{ secrets.EPIC_CLIENT_SECRET }}
+          EPIC_CLIENT_ID_SECRET: ${{ secrets.EPIC_CLIENT_ID_SECRET }}
           BATTLENET_CLIENT_ID: ${{ secrets.BATTLENET_CLIENT_ID }}
           BATTLENET_CLIENT_SECRET: ${{ secrets.BATTLENET_CLIENT_SECRET }}
           IGDB_CLIENT_ID: ${{ secrets.IGDB_CLIENT_ID }}

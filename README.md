@@ -49,7 +49,7 @@ Create a `.env` file in the root directory with:
 ```env
 STEAM_API_KEY=your_steam_api_key
 EPIC_CLIENT_ID=your_epic_client_id
-EPIC_CLIENT_SECRET=your_epic_client_secret
+EPIC_CLIENT_ID_SECRET=your_epic_client_id_secret
 BATTLENET_CLIENT_ID=your_battlenet_client_id
 BATTLENET_CLIENT_SECRET=your_battlenet_client_secret
 IGDB_CLIENT_ID=your_igdb_client_id

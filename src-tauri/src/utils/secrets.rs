@@ -10,31 +10,28 @@ pub struct CompiledSecrets {
     pub igdb_client_secret: String,
     pub steam_api_key: String,
     pub epic_client_id: String,
-    pub epic_client_secret: String,
+    pub epic_client_id_secret: String,
     pub battlenet_client_id: String,
     pub battlenet_client_secret: String,
 }
 
 impl CompiledSecrets {
-    pub fn new() -> Self {
-        let is_dev = std::env::var("TAURI_ENV").unwrap_or_default() == "dev";
+    pub fn new() -> Result<Self, AppError> {
+        let is_dev = env::var("TAURI_ENV").unwrap_or_default() == "dev";
         log_debug!("Running in {} mode", if is_dev { "development" } else { "production" });
-        log_debug!("IGDB Client ID present: {}", !std::env::var("IGDB_CLIENT_ID").unwrap_or_default().is_empty());
 
-        if is_dev {
-            log_debug!("Running in development mode, using .env file");
-            dotenv::dotenv().ok();
-        }
+        let secrets = Self {
+            igdb_client_id: env::var("IGDB_CLIENT_ID").map_err(|_| AppError { message: "IGDB_CLIENT_ID not set".to_string() })?,
+            igdb_client_secret: env::var("IGDB_CLIENT_SECRET").map_err(|_| AppError { message: "IGDB_CLIENT_SECRET not set".to_string() })?,
+            steam_api_key: env::var("STEAM_API_KEY").map_err(|_| AppError { message: "STEAM_API_KEY not set".to_string() })?,
+            epic_client_id: env::var("EPIC_CLIENT_ID").map_err(|_| AppError { message: "EPIC_CLIENT_ID not set".to_string() })?,
+            epic_client_id_secret: env::var("EPIC_CLIENT_ID_SECRET").map_err(|_| AppError { message: "EPIC_CLIENT_ID_SECRET not set".to_string() })?,
+            battlenet_client_id: env::var("BATTLENET_CLIENT_ID").map_err(|_| AppError { message: "BATTLENET_CLIENT_ID not set".to_string() })?,
+            battlenet_client_secret: env::var("BATTLENET_CLIENT_SECRET").map_err(|_| AppError { message: "BATTLENET_CLIENT_SECRET not set".to_string() })?,
+        };
 
-        Self {
-            igdb_client_id: std::env::var("IGDB_CLIENT_ID").unwrap_or_default(),
-            igdb_client_secret: std::env::var("IGDB_CLIENT_SECRET").unwrap_or_default(),
-            steam_api_key: std::env::var("STEAM_API_KEY").unwrap_or_default(),
-            epic_client_id: std::env::var("EPIC_CLIENT_ID").unwrap_or_default(),
-            epic_client_secret: std::env::var("EPIC_CLIENT_SECRET").unwrap_or_default(),
-            battlenet_client_id: std::env::var("BATTLENET_CLIENT_ID").unwrap_or_default(),
-            battlenet_client_secret: std::env::var("BATTLENET_CLIENT_SECRET").unwrap_or_default(),
-        }
+        log_debug!("IGDB Client ID present: {}", !secrets.igdb_client_id.is_empty());
+        Ok(secrets)
     }
 }
 
@@ -45,16 +42,9 @@ pub struct SecretsManager {
 
 impl SecretsManager {
     pub fn new(app_name: &str) -> Self {
-        let is_dev = env::var("TAURI_ENV").unwrap_or_default() == "dev";
-
-        if is_dev {
-            log_debug!("Running in development mode, using .env file");
-            dotenv::dotenv().ok();
-        }
-
         Self {
             app_name: app_name.to_string(),
-            secrets: CompiledSecrets::new(),
+            secrets: CompiledSecrets::new().expect("Failed to load secrets"),
         }
     }
 
@@ -64,7 +54,7 @@ impl SecretsManager {
             "IGDB_CLIENT_SECRET" => Ok(self.secrets.igdb_client_secret.clone()),
             "STEAM_API_KEY" => Ok(self.secrets.steam_api_key.clone()),
             "EPIC_CLIENT_ID" => Ok(self.secrets.epic_client_id.clone()),
-            "EPIC_CLIENT_SECRET" => Ok(self.secrets.epic_client_secret.clone()),
+            "EPIC_CLIENT_ID_SECRET" => Ok(self.secrets.epic_client_id_secret.clone()),
             "BATTLENET_CLIENT_ID" => Ok(self.secrets.battlenet_client_id.clone()),
             "BATTLENET_CLIENT_SECRET" => Ok(self.secrets.battlenet_client_secret.clone()),
             _ => Err(AppError { message: format!("Unknown compiled secret: {}", key) }),

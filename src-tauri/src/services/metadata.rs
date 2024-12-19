@@ -38,7 +38,7 @@ impl MetadataService {
 
     pub async fn update_with_igdb_id(&self, game_id: &str, igdb_id: i64) -> Result<(), AppError> {
         // Récupérer d'abord le jeu de la base de données
-        let mut game = self
+        let game = self
             .database
             .games()
             .get_game(game_id)
