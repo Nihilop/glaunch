@@ -81,8 +81,10 @@ pub fn run() {
 
     builder
         .setup(move |app| {
+            // Charger les variables d'environnement à partir d'un fichier .env uniquement en mode développement
             dotenv().ok();
-            log_info!("Environment variables loaded");
+            log_info!("Environment variables loaded from .env file");
+
 
             // Configuration du tray
             let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
