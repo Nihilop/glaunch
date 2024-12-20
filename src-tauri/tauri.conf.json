@@ -70,7 +70,8 @@
         "scope": {
           "allow": [
             "$LOCALDATA/glaunch/media/**/*",
-            "$APPDATA/glaunch/media/**/*"
+            "$APPDATA/glaunch/media/**/*",
+            "$CACHE/glaunch/media/**/*"
           ],
           "deny": []
         }

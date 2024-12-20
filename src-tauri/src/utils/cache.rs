@@ -5,6 +5,7 @@ use std::fs;
 use std::path::PathBuf;
 use std::time::{Duration, SystemTime};
 use tokio::fs as async_fs;
+use crate::log_debug;
 
 pub struct MediaCache {
     cache_dir: PathBuf,
@@ -40,12 +41,13 @@ impl MediaCache {
         });
 
         let cache_path = self.cache_dir.join(&cache_key);
+        log_debug!("Cache path: {}", cache_path.display());
 
         if let Ok(metadata) = fs::metadata(&cache_path) {
             if let Ok(modified) = metadata.modified() {
                 if let Ok(age) = SystemTime::now().duration_since(modified) {
                     if age < max_age {
-                        // Retourner juste la clé avec le protocole asset
+                        log_debug!("Using cached file: {}", cache_path.display());
                         return Ok(cache_path.to_string_lossy().to_string());
                     }
                 }

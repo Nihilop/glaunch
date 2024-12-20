@@ -23,7 +23,7 @@
 
       <!-- Game Image -->
       <img
-        :src="game.media?.thumbnail ? convertFileSrc(game.media.thumbnail) : ''"
+        :src="game.media?.thumbnail ? debugImagePath(game.media.thumbnail) : ''"
         :alt="game.metadata.title"
         :class="[
           'object-cover',
@@ -82,6 +82,16 @@ const props = withDefaults(defineProps<Props>(), {
   loading: false,
   viewMode: 'grid'
 })
+
+const debugImagePath = (path: string) => {
+  const converted = convertFileSrc(path);
+  // console.log({
+  //   original: path,
+  //   converted: converted,
+  //   exists: typeof path === 'string' && path.length > 0
+  // });
+  return converted;
+}
 
 const handleImageError = (event: Event) => {
   const target = event.target as HTMLImageElement
