@@ -78,9 +78,6 @@ impl MediaCache {
         let cache_path = self.cache_dir.join(format!("{}{}", cache_key, extension));
         log_debug!("Cache path: {}", cache_path.display());
 
-        let cache_path = self.cache_dir.join(format!("{}{}", cache_key, extension));
-        log_debug!("Cache path: {}", cache_path.display());
-
         if let Ok(metadata) = fs::metadata(&cache_path) {
             if let Ok(modified) = metadata.modified() {
                 if let Ok(age) = SystemTime::now().duration_since(modified) {
