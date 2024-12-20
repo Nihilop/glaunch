@@ -4,6 +4,7 @@ use crate::utils::AppError;
 use chrono::Utc;
 use sqlx::{Executor, Row, SqlitePool};
 use std::path::PathBuf;
+use crate::log_debug;
 
 pub struct GameQueries<'a> {
     pool: &'a SqlitePool,
@@ -217,24 +218,131 @@ impl<'a> GameQueries<'a> {
     }
 
     pub async fn get_all_games(&self) -> Result<Vec<Game>, AppError> {
-        let game_ids: Vec<String> = sqlx::query("SELECT id FROM games ORDER BY title")
-            .fetch_all(self.pool)
-            .await
-            .map_err(|e| AppError {
-                message: format!("Failed to fetch games: {}", e),
-            })?
-            .iter()
-            .map(|row| row.get("id"))
-            .collect();
+        log_debug!("Starting to fetch all games from database");
+        let games = sqlx::query(
+            r#"
+            SELECT
+                g.*,
+                m.title as meta_title,
+                m.description,
+                m.developer,
+                m.publisher,
+                m.release_date,
+                med.thumbnail,
+                med.cover,
+                med.background,
+                med.icon,
+                med.logo,
+                s.total_playtime,
+                s.last_session_duration,
+                s.sessions_count,
+                s.first_played,
+                s.last_played
+            FROM games g
+            LEFT JOIN game_metadata m ON g.id = m.game_id
+            LEFT JOIN game_media med ON g.id = med.game_id
+            LEFT JOIN game_stats s ON g.id = s.game_id
+            ORDER BY g.title
+            "#,
+        )
+        .fetch_all(self.pool)
+        .await
+        .map_err(|e| AppError {
+            message: format!("Failed to fetch games: {}", e),
+        })?;
 
-        let mut games = Vec::new();
-        for id in game_ids {
-            if let Some(game) = self.get_game(&id).await? {
-                games.push(game);
-            }
+        log_debug!("Found {} games in database", games.len());
+
+        let mut result = Vec::new();
+
+        for row in games {
+            // Récupérer les genres
+            let genres = sqlx::query("SELECT genre FROM game_genres WHERE game_id = ?")
+                .bind(&row.get::<String, _>("id"))
+                .fetch_all(self.pool)
+                .await
+                .map_err(|e| AppError {
+                    message: format!("Failed to fetch genres: {}", e),
+                })?
+                .iter()
+                .map(|r| r.get::<String, _>("genre"))
+                .collect();
+
+            // Récupérer les tags
+            let tags = sqlx::query("SELECT tag FROM game_tags WHERE game_id = ?")
+                .bind(&row.get::<String, _>("id"))
+                .fetch_all(self.pool)
+                .await
+                .map_err(|e| AppError {
+                    message: format!("Failed to fetch tags: {}", e),
+                })?
+                .iter()
+                .map(|r| r.get::<String, _>("tag"))
+                .collect();
+
+            // Récupérer les screenshots
+            let screenshots = sqlx::query("SELECT url FROM game_screenshots WHERE game_id = ?")
+                .bind(&row.get::<String, _>("id"))
+                .fetch_all(self.pool)
+                .await
+                .map_err(|e| AppError {
+                    message: format!("Failed to fetch screenshots: {}", e),
+                })?
+                .iter()
+                .map(|r| r.get::<String, _>("url"))
+                .collect();
+
+            let platform = match row.get::<String, _>("platform").as_str() {
+                "Steam" => Platform::Steam,
+                "BattleNet" => Platform::BattleNet,
+                "Epic" => Platform::Epic,
+                _ => Platform::Custom,
+            };
+
+            result.push(Game {
+                id: row.get("id"),
+                platform_id: row.get("platform_id"),
+                platform,
+                title: row.get("title"),
+                installation: GameInstallation {
+                    install_path: PathBuf::from(row.get::<String, _>("install_path")),
+                    executable: row.get("executable"),
+                    size: row.get::<i64, _>("install_size") as u64,
+                    version: row.get("version"),
+                    last_updated: row.get("last_updated"),
+                },
+                metadata: GameMetadata {
+                    title: row.get::<Option<String>, _>("meta_title")
+                        .unwrap_or_else(|| row.get("title")),
+                    description: row.get("description"),
+                    developer: row.get("developer"),
+                    publisher: row.get("publisher"),
+                    release_date: row.get("release_date"),
+                    genres,
+                    tags,
+                    media: None,
+                },
+                media: GameMedia {
+                    thumbnail: row.get("thumbnail"),
+                    cover: row.get("cover"),
+                    screenshots,
+                    background: row.get("background"),
+                    icon: row.get("icon"),
+                    logo: row.get("logo"),
+                },
+                last_played: row.get("last_played"),
+                stats: GameStats {
+                    total_playtime: row.get::<Option<i64>, _>("total_playtime").unwrap_or(0),
+                    last_session_duration: row.get::<Option<i64>, _>("last_session_duration").unwrap_or(0),
+                    sessions_count: row.get::<Option<i32>, _>("sessions_count").unwrap_or(0),
+                    first_played: row.get("first_played"),
+                    last_played: row.get("last_played"),
+                },
+            });
         }
 
-        Ok(games)
+        log_debug!("Finished processing all {} games", result.len());
+        Ok(result)
     }
 
     pub async fn upsert_game(&self, game: &Game) -> Result<(), AppError> {

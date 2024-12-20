@@ -106,8 +106,10 @@ impl MediaCache {
                 message: format!("Failed to write to cache: {}", e),
             })?;
 
-        // Retourner l'URL avec le protocole asset://
-        Ok(cache_path.to_string_lossy().to_string())
+        let absolute_path = cache_path.to_string_lossy().replace('\\', "/");
+        log_debug!("Absolute path for storage: {}", absolute_path);
+
+        Ok(absolute_path)
     }
 
     pub fn clear_old_cache(&self, max_age: Duration) -> Result<(), AppError> {
