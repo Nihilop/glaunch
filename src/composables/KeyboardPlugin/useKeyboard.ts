@@ -23,9 +23,6 @@ export function useKeyboard() {
       console.debug('[Navigation] No active zone')
       return
     }
-
-    console.debug(`[Navigation] Navigating ${direction} in zone ${activeZone.id}`)
-    // Appeler la méthode de navigation du store
     store.navigate(direction)
   }
 
@@ -44,7 +41,6 @@ export function useKeyboard() {
 
   // Fonction pour arrêter la répétition
   const stopRepeat = (direction: 'up' | 'down' | 'left' | 'right') => {
-    console.log(direction)
     if (intervals[direction]) {
       clearInterval(intervals[direction])
       intervals[direction] = null
@@ -80,8 +76,6 @@ export function useKeyboard() {
   })
 
   watch(() => Array.from(current), (currentKeys) => {
-    console.log(currentKeys)
-
     if (currentKeys.includes('arrowright')) {
       startRepeat('right')
     } else {

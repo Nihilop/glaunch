@@ -85,11 +85,11 @@ const props = withDefaults(defineProps<Props>(), {
 
 const debugImagePath = (path: string) => {
   const converted = convertFileSrc(path);
-  // console.log({
-  //   original: path,
-  //   converted: converted,
-  //   exists: typeof path === 'string' && path.length > 0
-  // });
+  console.log({
+    original: path,
+    converted: converted,
+    exists: typeof path === 'string' && path.length > 0
+  });
   return converted;
 }
 
