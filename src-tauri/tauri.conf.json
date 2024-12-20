@@ -44,12 +44,21 @@
           "https://steamcommunity.com",
           "https://*.steampowered.com",
           "https://*.steamstatic.com",
+          "https://images.igdb.com",
           "data:"
         ],
         "connect-src": [
           "'self'",
           "https://api.steampowered.com",
-          "https://steamcommunity.com"
+          "https://steamcommunity.com",
+          "https://api.igdb.com",
+          "https://id.twitch.tv",
+          "https://api.epicgames.dev",
+          "https://api.epicgames.com",
+          "https://www.epicgames.com",
+          "https://oauth.battle.net",
+          "https://us.api.blizzard.com",
+          "https://eu.api.blizzard.com"
         ],
         "style-src": [
           "'self'",
