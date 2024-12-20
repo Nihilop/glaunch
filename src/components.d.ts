@@ -154,6 +154,7 @@ declare module 'vue' {
     Label: typeof import('./components/ui/label/Label.vue')['default']
     LineChart: typeof import('./components/ui/chart-line/LineChart.vue')['default']
     LoadingSpinner: typeof import('./components/LoadingSpinner.vue')['default']
+    LogViewer: typeof import('./components/LogViewer.vue')['default']
     Menubar: typeof import('./components/ui/menubar/Menubar.vue')['default']
     MenubarCheckboxItem: typeof import('./components/ui/menubar/MenubarCheckboxItem.vue')['default']
     MenubarContent: typeof import('./components/ui/menubar/MenubarContent.vue')['default']
