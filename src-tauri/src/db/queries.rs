@@ -655,36 +655,11 @@ impl<'a> MetadataQueries<'a> {
                     "#,
             )
             .bind(game_id)
-            .bind(
-                &media
-                    .thumbnail
-                    .clone()
-                    .map(|path| path.split('/').last().unwrap_or("").to_string()),
-            )
-            .bind(
-                &media
-                    .cover
-                    .clone()
-                    .map(|path| path.split('/').last().unwrap_or("").to_string()),
-            )
-            .bind(
-                &media
-                    .background
-                    .clone()
-                    .map(|path| path.split('/').last().unwrap_or("").to_string()),
-            )
-            .bind(
-                &media
-                    .icon
-                    .clone()
-                    .map(|path| path.split('/').last().unwrap_or("").to_string()),
-            )
-            .bind(
-                &media
-                    .logo
-                    .clone()
-                    .map(|path| path.split('/').last().unwrap_or("").to_string()),
-            )
+            .bind(&media.thumbnail)
+            .bind(&media.cover)
+            .bind(&media.background)
+            .bind(&media.icon)
+            .bind(&media.logo)
             .bind(chrono::Utc::now().timestamp())
             .execute(&mut *tx)
             .await
