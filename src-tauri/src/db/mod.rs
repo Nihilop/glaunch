@@ -2,11 +2,13 @@
 use crate::utils::AppError;
 use sqlx::sqlite::{SqlitePool, SqlitePoolOptions};
 use std::path::PathBuf;
-
+use std::time::Duration;
 mod migrations;
 mod queries;
 mod schema;
 use migrations::run_migrations;
+use crate::log_debug;
+use crate::log_error;
 
 pub use queries::{GameQueries, MetadataQueries, SessionQueries};
 
@@ -26,31 +28,58 @@ impl Database {
         })?;
 
         let db_path = db_dir.join("games.db");
-
-        // SQLite connection string for Windows
-        let db_url = format!(
-            "sqlite:{}?mode=rwc",
-            db_path.to_str().ok_or_else(|| AppError {
-                message: "Invalid database path".to_string()
-            })?
-        );
+        log_debug!("Database path: {}", db_path.display());
 
         let pool = SqlitePoolOptions::new()
             .max_connections(5)
-            .connect(&db_url)
+            .acquire_timeout(Duration::from_secs(30))
+            .idle_timeout(Duration::from_secs(60))
+            .connect(&format!(
+                "sqlite:{}?mode=rwc",
+                db_path.to_str().ok_or_else(|| AppError {
+                    message: "Invalid database path".to_string()
+                })?
+            ))
             .await
             .map_err(|e| AppError {
                 message: format!("Failed to connect to database: {}", e),
             })?;
 
-        run_migrations(&pool).await?;
+        // Configurer SQLite pour plus de stabilité
+        sqlx::query("PRAGMA journal_mode = WAL;")
+            .execute(&pool)
+            .await
+            .map_err(|e| AppError {
+                message: format!("Failed to set journal mode: {}", e),
+            })?;
 
-        Ok(Self { pool })
+        sqlx::query("PRAGMA busy_timeout = 5000;")
+            .execute(&pool)
+            .await
+            .map_err(|e| AppError {
+                message: format!("Failed to set busy timeout: {}", e),
+            })?;
+
+        let db = Self { pool };
+
+        // Initialiser la base de données
+        log_debug!("Running database migrations...");
+        match db.initialize().await {
+            Ok(_) => {
+                log_debug!("Database migrations completed successfully");
+                Ok(db)
+            },
+            Err(e) => {
+                log_error!("Database initialization failed: {}", e);
+                Err(e)
+            }
+        }
     }
 
     pub async fn initialize(&self) -> Result<(), AppError> {
-        // Exécuter les migrations
+        log_debug!("Initializing database...");
         run_migrations(&self.pool).await?;
+        log_debug!("Database initialized successfully");
         Ok(())
     }
 

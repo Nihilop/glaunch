@@ -40,7 +40,46 @@ impl MediaCache {
             hasher.finalize()
         });
 
+        // Vérifier d'abord le cache
         let cache_path = self.cache_dir.join(&cache_key);
+        if let Ok(metadata) = fs::metadata(&cache_path) {
+            if let Ok(modified) = metadata.modified() {
+                if let Ok(age) = SystemTime::now().duration_since(modified) {
+                    if age < max_age {
+                        log_debug!("Using cached file: {}", cache_path.display());
+                        return Ok(cache_path.to_string_lossy().to_string())
+                    }
+                }
+            }
+        }
+
+        // Si pas en cache, télécharger
+        let response = self.http_client
+            .get(url)
+            .send()
+            .await
+            .map_err(|e| AppError {
+                message: format!("Failed to download media: {}", e),
+            })?;
+
+        let content_type = response.headers()
+            .get("content-type")
+            .and_then(|ct| ct.to_str().ok())
+            .unwrap_or("image/jpeg");
+
+        let extension = match content_type {
+            "image/jpeg" | "image/jpg" => ".jpg",
+            "image/png" => ".png",
+            "image/gif" => ".gif",
+            "image/webp" => ".webp",
+            _ => ".jpg"  // extension par défaut
+        };
+
+        let cache_path = self.cache_dir.join(format!("{}{}", cache_key, extension));
+        log_debug!("Cache path: {}", cache_path.display());
+
+        let cache_path = self.cache_dir.join(format!("{}{}", cache_key, extension));
+        log_debug!("Cache path: {}", cache_path.display());
 
         if let Ok(metadata) = fs::metadata(&cache_path) {
             if let Ok(modified) = metadata.modified() {

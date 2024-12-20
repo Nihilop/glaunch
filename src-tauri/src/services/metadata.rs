@@ -7,6 +7,9 @@ use crate::services::IgdbSearchResult;
 use crate::utils::AppError;
 use std::sync::Arc;
 use crate::log_info;
+use crate::log_warn;
+use crate::log_error;
+use crate::log_debug;
 
 pub struct MetadataService {
     database: Arc<Database>,
@@ -15,20 +18,14 @@ pub struct MetadataService {
 
 impl MetadataService {
     pub fn new(database: Arc<Database>, client_id: String, client_secret: String) -> Result<Self, AppError> {
-        // Vérifier si les clés sont présentes
-        if client_id.is_empty() || client_secret.is_empty() {
-            log_info!("IGDB credentials not provided, metadata service will be limited");
-            return Ok(Self {
-                database,
-                igdb: Arc::new(IgdbService::new(client_id, String::new())?),
-            });
-        }
-
-        // Si les clés sont présentes, obtenir le token d'accès IGDB
-        log_info!("Initializing IGDB service with credentials");
+        // Obtenir le token d'accès IGDB - mais ne pas bloquer si ça échoue
         let access_token = tokio::runtime::Runtime::new()
             .unwrap()
-            .block_on(Self::get_twitch_access_token(&client_id, &client_secret))?;
+            .block_on(Self::get_twitch_access_token(&client_id, &client_secret))
+            .unwrap_or_else(|e| {
+                log_warn!("Failed to get Twitch access token: {}. IGDB features will be limited.", e);
+                String::new()
+            });
 
         Ok(Self {
             database,
@@ -107,13 +104,9 @@ impl MetadataService {
         Ok((metadata, media))
     }
 
-    async fn get_twitch_access_token(
-        client_id: &str,
-        client_secret: &str,
-    ) -> Result<String, AppError> {
-        if client_id.is_empty() || client_secret.is_empty() {
-            return Ok(String::new());
-        }
+    async fn get_twitch_access_token(client_id: &str, client_secret: &str) -> Result<String, AppError> {
+        log_debug!("Attempting to get Twitch access token...");
+
         let client = reqwest::Client::new();
         let response = client
             .post("https://id.twitch.tv/oauth2/token")
@@ -128,16 +121,32 @@ impl MetadataService {
                 message: format!("Failed to get Twitch access token: {}", e),
             })?;
 
-        let token_data: serde_json::Value = response.json().await.map_err(|e| AppError {
+        // Log de la réponse HTTP
+        log_debug!("Twitch response status: {}", response.status());
+
+        if !response.status().is_success() {
+            let error_text = response.text().await.unwrap_or_default();
+            log_error!("Twitch auth failed. Response: {}", error_text);
+            return Ok(String::new());
+        }
+
+        // Log du body de la réponse pour debug
+        let response_text = response.text().await.map_err(|e| AppError {
+            message: format!("Failed to read response body: {}", e),
+        })?;
+        log_debug!("Twitch response body: {}", response_text);
+
+        let token_data: serde_json::Value = serde_json::from_str(&response_text).map_err(|e| AppError {
             message: format!("Failed to parse token response: {}", e),
         })?;
 
-        token_data["access_token"]
-            .as_str()
-            .map(String::from)
-            .ok_or_else(|| AppError {
-                message: "No access token in response".to_string(),
-            })
+        if let Some(token) = token_data["access_token"].as_str() {
+            log_debug!("Successfully retrieved Twitch access token");
+            Ok(token.to_string())
+        } else {
+            log_error!("No access_token in response: {:?}", token_data);
+            Ok(String::new())
+        }
     }
 
     pub async fn update_metadata(&self, game: &mut Game) -> Result<(), AppError> {

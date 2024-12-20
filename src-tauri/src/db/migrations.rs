@@ -2,6 +2,7 @@
 use crate::utils::AppError;
 use sqlx::Row;
 use sqlx::SqlitePool;
+use crate::log_debug;
 
 pub struct Migration {
     version: i32,
@@ -20,6 +21,7 @@ const MIGRATIONS: &[Migration] = &[
 
 pub async fn run_migrations(pool: &SqlitePool) -> Result<(), AppError> {
     // Créer la table des migrations si elle n'existe pas
+    log_debug!("Starting database migrations...");
     sqlx::query(
         r#"
         CREATE TABLE IF NOT EXISTS schema_migrations (
@@ -35,6 +37,7 @@ pub async fn run_migrations(pool: &SqlitePool) -> Result<(), AppError> {
         message: format!("Failed to create migrations table: {}", e),
     })?;
 
+    log_debug!("Checking for pending migrations...");
     // Vérifier quelles migrations ont déjà été appliquées
     let applied_versions: Vec<i32> =
         sqlx::query("SELECT version FROM schema_migrations ORDER BY version")
@@ -80,6 +83,6 @@ pub async fn run_migrations(pool: &SqlitePool) -> Result<(), AppError> {
             })?;
         }
     }
-
+    log_debug!("Migrations completed successfully");
     Ok(())
 }

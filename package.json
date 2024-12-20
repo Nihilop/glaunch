@@ -6,6 +6,7 @@
   "scripts": {
     "dev:front": "vite",
     "build": "vite build",
+    "build:local": "cross-env TAURI_ENV=dev pnpm tauri build",
     "preview": "vite preview",
     "dev": "cross-env TAURI_ENV=dev tauri dev",
     "version": "node -p \"require('./src-tauri/Cargo.toml').package.version\"",

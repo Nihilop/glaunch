@@ -43,11 +43,16 @@ impl GameManager {
         app_handle: AppHandle,
         game_monitor: Arc<GameMonitor>,
         igdb_client_id: String,
-        igdb_client_secret: String,
+        igdb_client_secret: String
     ) -> Result<Self, AppError> {
         let steam_platform = Arc::new(Mutex::new(steam::SteamPlatform::new(database.clone())));
-        let metadata_service =
-            MetadataService::new(database.clone(), igdb_client_id, igdb_client_secret)?;
+
+        // Créer le service de métadonnées - maintenant ça ne devrait plus crasher
+        let metadata_service = MetadataService::new(
+            database.clone(),
+            igdb_client_id,
+            igdb_client_secret,
+        )?;
 
         Ok(Self {
             platforms: vec![
