@@ -45,19 +45,12 @@ impl Database {
                 message: format!("Failed to connect to database: {}", e),
             })?;
 
-        // Configurer SQLite pour plus de stabilité
-        sqlx::query("PRAGMA journal_mode = WAL;")
+        // Désactiver le mode WAL
+        sqlx::query("PRAGMA journal_mode = DELETE;")
             .execute(&pool)
             .await
             .map_err(|e| AppError {
                 message: format!("Failed to set journal mode: {}", e),
-            })?;
-
-        sqlx::query("PRAGMA busy_timeout = 5000;")
-            .execute(&pool)
-            .await
-            .map_err(|e| AppError {
-                message: format!("Failed to set busy timeout: {}", e),
             })?;
 
         let db = Self { pool };
