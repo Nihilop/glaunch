@@ -1,0 +1,11 @@
+{
+  "secrets": {
+    "IGDB_CLIENT_ID": "value",
+    "IGDB_CLIENT_SECRET": "value",
+    "STEAM_API_KEY": "value",
+    "EPIC_CLIENT_ID": "value",
+    "EPIC_CLIENT_ID_SECRET": "value",
+    "BATTLENET_CLIENT_ID": "value",
+    "BATTLENET_CLIENT_SECRET": "value"
+  }
+}

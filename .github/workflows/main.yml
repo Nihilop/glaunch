@@ -60,12 +60,22 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Debug environment variables
+      - name: Generate config
+        shell: pwsh
         run: |
-          echo "IGDB_CLIENT_ID length: ${#IGDB_CLIENT_ID}"
-          echo "Environment variables are set: $([bool]$env:IGDB_CLIENT_ID)"
-        env:
-          IGDB_CLIENT_ID: ${{ secrets.IGDB_CLIENT_ID }}
+          $config = @{
+            secrets = @{
+              IGDB_CLIENT_ID = "${{ secrets.IGDB_CLIENT_ID }}"
+              IGDB_CLIENT_SECRET = "${{ secrets.IGDB_CLIENT_SECRET }}"
+              STEAM_API_KEY = "${{ secrets.STEAM_API_KEY }}"
+              EPIC_CLIENT_ID = "${{ secrets.EPIC_CLIENT_ID }}"
+              EPIC_CLIENT_ID_SECRET = "${{ secrets.EPIC_CLIENT_ID_SECRET }}"
+              BATTLENET_CLIENT_ID = "${{ secrets.BATTLENET_CLIENT_ID }}"
+              BATTLENET_CLIENT_SECRET = "${{ secrets.BATTLENET_CLIENT_SECRET }}"
+            }
+          }
+
+          $config | ConvertTo-Json | Set-Content "src-tauri/config.production.json"
 
       - name: Set up Tauri signing key
         run: |

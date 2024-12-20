@@ -1,8 +1,14 @@
 use serde::{Deserialize, Serialize};
 use keyring::Entry;
 use std::env;
+use std::collections::HashMap;
 use crate::utils::AppError;
 use crate::log_debug;
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct Config {
+    secrets: HashMap<String, String>,
+}
 
 #[derive(Debug, Clone)]
 pub struct CompiledSecrets {
@@ -20,30 +26,47 @@ impl CompiledSecrets {
         let is_dev = env::var("TAURI_ENV").unwrap_or_default() == "dev";
         log_debug!("Running in {} mode", if is_dev { "development" } else { "production" });
 
+        let config: Config = if !is_dev {
+            // En production, lire le fichier de config embarqué
+            log_debug!("Loading production config...");
+            let config_str = include_str!("../../config.production.json");
+            serde_json::from_str(config_str).map_err(|e| AppError {
+                message: format!("Failed to parse config: {}", e)
+            })?
+        } else {
+            // En dev, lire les variables d'environnement
+            log_debug!("Loading development environment variables...");
+            dotenv::dotenv().ok();
+            let mut secrets = HashMap::new();
+            for key in &[
+                "IGDB_CLIENT_ID",
+                "IGDB_CLIENT_SECRET",
+                "STEAM_API_KEY",
+                "EPIC_CLIENT_ID",
+                "EPIC_CLIENT_ID_SECRET",
+                "BATTLENET_CLIENT_ID",
+                "BATTLENET_CLIENT_SECRET",
+            ] {
+                secrets.insert(
+                    key.to_string(),
+                    env::var(key).unwrap_or_default()
+                );
+            }
+            Config { secrets }
+        };
 
-        log_debug!("Loading IGDB_CLIENT_ID...");
-        let igdb_client_id = env::var("IGDB_CLIENT_ID").map_err(|_| AppError { message: "IGDB_CLIENT_ID not set".to_string() })?;
-        log_debug!("Loading IGDB_CLIENT_SECRET...");
-        let igdb_client_secret = env::var("IGDB_CLIENT_SECRET").map_err(|_| AppError { message: "IGDB_CLIENT_SECRET not set".to_string() })?;
-        log_debug!("Loading STEAM_API_KEY...");
-        let steam_api_key = env::var("STEAM_API_KEY").map_err(|_| AppError { message: "STEAM_API_KEY not set".to_string() })?;
-        log_debug!("Loading EPIC_CLIENT_ID...");
-        let epic_client_id = env::var("EPIC_CLIENT_ID").map_err(|_| AppError { message: "EPIC_CLIENT_ID not set".to_string() })?;
-        log_debug!("Loading EPIC_CLIENT_ID_SECRET...");
-        let epic_client_id_secret = env::var("EPIC_CLIENT_ID_SECRET").map_err(|_| AppError { message: "EPIC_CLIENT_ID_SECRET not set".to_string() })?;
-        log_debug!("Loading BATTLENET_CLIENT_ID...");
-        let battlenet_client_id = env::var("BATTLENET_CLIENT_ID").map_err(|_| AppError { message: "BATTLENET_CLIENT_ID not set".to_string() })?;
-        log_debug!("Loading BATTLENET_CLIENT_SECRET...");
-        let battlenet_client_secret = env::var("BATTLENET_CLIENT_SECRET").map_err(|_| AppError { message: "BATTLENET_CLIENT_SECRET not set".to_string() })?;
+        let get_secret = |key: &str| {
+            config.secrets.get(key).cloned().unwrap_or_default()
+        };
 
         let secrets = Self {
-          igdb_client_id,
-          igdb_client_secret,
-          steam_api_key,
-          epic_client_id,
-          epic_client_id_secret,
-          battlenet_client_id,
-          battlenet_client_secret,
+            igdb_client_id: get_secret("IGDB_CLIENT_ID"),
+            igdb_client_secret: get_secret("IGDB_CLIENT_SECRET"),
+            steam_api_key: get_secret("STEAM_API_KEY"),
+            epic_client_id: get_secret("EPIC_CLIENT_ID"),
+            epic_client_id_secret: get_secret("EPIC_CLIENT_ID_SECRET"),
+            battlenet_client_id: get_secret("BATTLENET_CLIENT_ID"),
+            battlenet_client_secret: get_secret("BATTLENET_CLIENT_SECRET"),
         };
 
         log_debug!("IGDB Client ID present: {}", !secrets.igdb_client_id.is_empty());
