@@ -88,7 +88,7 @@ const debugImagePath = (path: string) => {
   console.log({
     original: path,
     converted: converted,
-    exists: typeof path === 'string' && path.length > 0
+    exists: path.length > 0
   });
   return converted;
 }
