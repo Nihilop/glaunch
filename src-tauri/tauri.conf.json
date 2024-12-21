@@ -72,8 +72,10 @@
       "assetProtocol": {
         "enable": true,
         "scope": {
+          "requireLiteralLeadingDot": false,
           "allow": [
-            "$APPDATA/**"
+            "$APPDATA/**",
+            "$APPDATA/media/**"
           ],
           "deny": []
         }
