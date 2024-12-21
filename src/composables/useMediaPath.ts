@@ -1,5 +1,5 @@
 import {convertFileSrc} from '@tauri-apps/api/core'
-import {appDataDir} from '@tauri-apps/api/path'
+import {appDataDir, join } from '@tauri-apps/api/path'
 
 export function useMediaPath() {
   // Cache pour éviter de résoudre plusieurs fois le même chemin
@@ -15,7 +15,8 @@ export function useMediaPath() {
     try {
       if (path.startsWith('media/')) {
         // Assurez-vous que le chemin est correctement formaté
-        const fullPath = `${appDataDirPath}/${path}`
+        const fullPath = await join(appDataDirPath, path);
+
         const convertedPath = convertFileSrc(fullPath)
         console.log("Converted path:", convertedPath) // Log pour debug
 

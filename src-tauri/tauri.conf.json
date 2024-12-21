@@ -60,7 +60,9 @@
           "https://www.epicgames.com",
           "https://oauth.battle.net",
           "https://us.api.blizzard.com",
-          "https://eu.api.blizzard.com"
+          "https://eu.api.blizzard.com",
+          "ipc:",
+          "http://ipc.localhost"
         ],
         "style-src": [
           "'self'",
