@@ -2,12 +2,7 @@
   <main class="absolute w-full h-screen bg-gray-900 text-white overflow-hidden">
     <!-- Dynamic Background -->
     <div class="absolute inset-0 transition-opacity duration-500">
-      <img
-        v-if="game?.media?.background || game?.media?.cover"
-        :src="convertFileSrc(game.media.background || game.media.cover)"
-        :alt="game?.title"
-        class="w-full h-full object-cover opacity-50"
-      >
+      <GameBackground v-if="game?.media?.background || game?.media?.cover" :src="game.media.background || game.media.cover" alt="background" />
       <div class="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/50 to-transparent"/>
     </div>
 
@@ -34,13 +29,11 @@
       <div class="p-8 space-y-8 max-h-full">
         <!-- Header -->
         <header class="flex items-end space-x-4 -mt-[180px]">
-          <img
+          <GameImage
             v-if="game"
-            :src="game.media?.thumbnail ? convertFileSrc(game.media.thumbnail) : ''"
+            :src="game.media?.thumbnail"
             :alt="game.metadata.title"
-            class="w-44 h-64 object-cover rounded-md group"
-            @error="handleImageError"
-          >
+          />
           <div>
             <div ref="actionsRef" class="flex gap-4 mb-4">
               <button
@@ -202,6 +195,8 @@ import {useRegion, useZone} from '@/composables/KeyboardPlugin'
 import {convertFileSrc, invoke} from "@tauri-apps/api/core"
 import {ChevronLeft, Loader2} from 'lucide-vue-next'
 import {Dialog, DialogContent, DialogHeader, DialogTitle,} from '@/components/ui/dialog'
+import GameBackground from "@/components/GameBackground.vue";
+import GameImage from "@/components/GameImage.vue";
 
 interface IgdbSearchResult {
   id: number;

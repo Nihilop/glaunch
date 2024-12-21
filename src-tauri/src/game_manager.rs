@@ -50,6 +50,7 @@ impl GameManager {
         // Créer le service de métadonnées - maintenant ça ne devrait plus crasher
         let metadata_service = MetadataService::new(
             database.clone(),
+            app_handle.clone(),
             igdb_client_id,
             igdb_client_secret,
         )?;

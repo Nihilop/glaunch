@@ -4,12 +4,7 @@
 
     <!-- Dynamic Background -->
     <div class="fixed inset-0 transition-opacity duration-700">
-      <img
-        v-if="activeGame?.media?.background"
-        :src="convertFileSrc(activeGame.media.background)"
-        class="w-full h-full object-cover opacity-100"
-        alt="background"
-      >
+      <GameBackground v-if="activeGame?.media?.background" :src="activeGame.media.background" alt="background" />
       <div class="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/50 to-transparent"/>
     </div>
 
@@ -114,7 +109,7 @@
 
 <script setup lang="ts">
 import {ref, computed, onMounted, watch, nextTick} from 'vue'
-import {invoke, convertFileSrc} from '@tauri-apps/api/core'
+import {invoke} from '@tauri-apps/api/core'
 import {useRouter} from 'vue-router'
 import {onStartTyping, useKeyModifier} from '@vueuse/core'
 import {useRegion, useZone} from '@/composables/KeyboardPlugin'
@@ -125,9 +120,11 @@ import {
   PATTERN_BACKGROUND_DIRECTION,
   PATTERN_BACKGROUND_VARIANT,
 } from "@/components/extends/background";
+import {useMediaPath} from "@/composables/useMediaPath.ts";
+import GameBackground from "@/components/GameBackground.vue";
 
 const router = useRouter()
-
+const { resolveMediaPath } = useMediaPath()
 // Refs
 const inputRef = ref<HTMLInputElement | null>(null)
 const gamesListRef = ref<HTMLElement | null>(null)
@@ -196,6 +193,8 @@ const loadGames = async (useCache = true) => {
       ...game,
       media: game.media || {}
     }))
+
+    console.log(result)
 
     if (!useCache) {
       isLoading.value = true

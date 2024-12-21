@@ -46,7 +46,8 @@
           "https://*.steampowered.com",
           "https://*.steamstatic.com",
           "https://images.igdb.com",
-          "data:"
+          "data:",
+          "blob:"
         ],
         "connect-src": [
           "'self'",
@@ -70,9 +71,7 @@
         "enable": true,
         "scope": {
           "allow": [
-            "$LOCALDATA/glaunch/media/**/*",
-            "$APPDATA/glaunch/media/**/*",
-            "$CACHE/glaunch/media/**/*"
+            "$APPDATA/**/*"
           ],
           "deny": []
         }

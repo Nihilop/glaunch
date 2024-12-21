@@ -5,7 +5,10 @@ use std::fs;
 use std::path::PathBuf;
 use std::time::{Duration, SystemTime};
 use tokio::fs as async_fs;
+use tauri::path::BaseDirectory;
 use crate::log_debug;
+use tauri::AppHandle;
+use tauri::Manager;
 
 pub struct MediaCache {
     cache_dir: PathBuf,
@@ -13,8 +16,15 @@ pub struct MediaCache {
 }
 
 impl MediaCache {
-    pub fn new() -> Result<Self, AppError> {
-        let cache_dir = Self::get_cache_dir()?;
+    pub fn new(app: &AppHandle) -> Result<Self, AppError> {
+        // Utiliser app_data_dir de tauri pour obtenir le bon chemin
+        let cache_dir = app.path()
+            .app_data_dir()
+            .or_else(|_| Err(AppError {
+                message: "Could not determine cache directory".to_string(),
+            }))?
+            .join("media");
+
         fs::create_dir_all(&cache_dir).map_err(|e| AppError {
             message: format!("Failed to create cache directory: {}", e),
         })?;
@@ -25,92 +35,74 @@ impl MediaCache {
         })
     }
 
-    fn get_cache_dir() -> Result<PathBuf, AppError> {
-        let base_dir = dirs::cache_dir().ok_or_else(|| AppError {
-            message: "Could not determine cache directory".to_string(),
-        })?;
+   pub async fn get_or_download(&self, url: &str, max_age: Duration) -> Result<String, AppError> {
+       // Générer la clé de cache
+       let cache_key = format!("{:x}", {
+           let mut hasher = Sha256::new();
+           hasher.update(url.as_bytes());
+           hasher.finalize()
+       });
 
-        Ok(base_dir.join("glaunch").join("media"))
-    }
+       // Construire les chemins
+       let relative_path = format!("media/{}.jpg", cache_key); // Ajout de l'extension par défaut
+       let cache_path = self.cache_dir.join(format!("{}.jpg", cache_key));
 
-    pub async fn get_or_download(&self, url: &str, max_age: Duration) -> Result<String, AppError> {
-        let cache_key = format!("{:x}", {
-            let mut hasher = Sha256::new();
-            hasher.update(url.as_bytes());
-            hasher.finalize()
-        });
+       log_debug!("Checking cache for: {}", &relative_path);
 
-        // Vérifier d'abord le cache
-        let cache_path = self.cache_dir.join(&cache_key);
-        if let Ok(metadata) = fs::metadata(&cache_path) {
-            if let Ok(modified) = metadata.modified() {
-                if let Ok(age) = SystemTime::now().duration_since(modified) {
-                    if age < max_age {
-                        log_debug!("Using cached file: {}", cache_path.display());
-                        return Ok(cache_path.to_string_lossy().to_string())
-                    }
-                }
-            }
-        }
+       // Vérifier le cache
+       if let Ok(metadata) = fs::metadata(&cache_path) {
+           if let Ok(modified) = metadata.modified() {
+               if let Ok(age) = SystemTime::now().duration_since(modified) {
+                   if age < max_age {
+                       log_debug!("Cache hit: {}", &relative_path);
+                       return Ok(relative_path);
+                   }
+               }
+           }
+       }
 
-        // Si pas en cache, télécharger
-        let response = self.http_client
-            .get(url)
-            .send()
-            .await
-            .map_err(|e| AppError {
-                message: format!("Failed to download media: {}", e),
-            })?;
+       // Si pas en cache ou expiré, télécharger
+       log_debug!("Cache miss, downloading: {}", url);
+       let response = self.http_client
+           .get(url)
+           .send()
+           .await
+           .map_err(|e| AppError {
+               message: format!("Failed to download media: {}", e),
+           })?;
 
-        let content_type = response.headers()
-            .get("content-type")
-            .and_then(|ct| ct.to_str().ok())
-            .unwrap_or("image/jpeg");
+       // Déterminer l'extension à partir du Content-Type
+       let extension = response.headers()
+           .get("content-type")
+           .and_then(|ct| ct.to_str().ok())
+           .map(|content_type| match content_type {
+               "image/jpeg" | "image/jpg" => ".jpg",
+               "image/png" => ".png",
+               "image/gif" => ".gif",
+               "image/webp" => ".webp",
+               _ => ".jpg"
+           })
+           .unwrap_or(".jpg");
 
-        let extension = match content_type {
-            "image/jpeg" | "image/jpg" => ".jpg",
-            "image/png" => ".png",
-            "image/gif" => ".gif",
-            "image/webp" => ".webp",
-            _ => ".jpg"  // extension par défaut
-        };
+       // Mettre à jour les chemins avec la bonne extension
+       let final_relative_path = format!("media/{}{}", cache_key, extension);
+       let final_cache_path = self.cache_dir.join(format!("{}{}", cache_key, extension));
 
-        let cache_path = self.cache_dir.join(format!("{}{}", cache_key, extension));
-        log_debug!("Cache path: {}", cache_path.display());
+       // Télécharger et sauvegarder
+       let bytes = response.bytes().await.map_err(|e| AppError {
+           message: format!("Failed to read media bytes: {}", e),
+       })?;
 
-        if let Ok(metadata) = fs::metadata(&cache_path) {
-            if let Ok(modified) = metadata.modified() {
-                if let Ok(age) = SystemTime::now().duration_since(modified) {
-                    if age < max_age {
-                        return Ok(cache_path.to_string_lossy().to_string());
-                    }
-                }
-            }
-        }
-        let response = self
-            .http_client
-            .get(url)
-            .send()
-            .await
-            .map_err(|e| AppError {
-                message: format!("Failed to download media: {}", e),
-            })?;
+       async_fs::write(&final_cache_path, bytes)
+           .await
+           .map_err(|e| AppError {
+               message: format!("Failed to write to cache: {}", e),
+           })?;
 
-        let bytes = response.bytes().await.map_err(|e| AppError {
-            message: format!("Failed to read media bytes: {}", e),
-        })?;
+       log_debug!("Saved new file: {} -> {}", url, &final_relative_path);
 
-        async_fs::write(&cache_path, bytes)
-            .await
-            .map_err(|e| AppError {
-                message: format!("Failed to write to cache: {}", e),
-            })?;
-
-        let absolute_path = cache_path.to_string_lossy().replace('\\', "/");
-        log_debug!("Absolute path for storage: {}", absolute_path);
-
-        Ok(absolute_path)
-    }
+       Ok(final_relative_path)
+   }
 
     pub fn clear_old_cache(&self, max_age: Duration) -> Result<(), AppError> {
         let now = SystemTime::now();

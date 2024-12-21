@@ -3,6 +3,8 @@ use serde::{Deserialize, Serialize};
 use std::env;
 use std::fs;
 use std::path::PathBuf;
+use tauri::AppHandle;
+use crate::utils::AppPaths;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AppSettings {
@@ -27,16 +29,9 @@ pub struct SettingsManager {
 }
 
 impl SettingsManager {
-    pub fn new() -> Result<Self, AppError> {
-        let app_data = env::var("APPDATA").map_err(|e| AppError {
-            message: format!("Failed to get APPDATA path: {}", e),
-        })?;
-        let settings_dir = PathBuf::from(app_data).join("glaunch");
-        let settings_path = settings_dir.join("settings.json");
-
-        fs::create_dir_all(&settings_dir).map_err(|e| AppError {
-            message: format!("Failed to create settings directory: {}", e),
-        })?;
+    pub fn new(app_handle: &AppHandle) -> Result<Self, AppError> {
+        let paths = AppPaths::new(app_handle)?;
+        let settings_path = paths.get_settings_path();
 
         let settings = if settings_path.exists() {
             let content = fs::read_to_string(&settings_path).map_err(|e| AppError {
@@ -44,18 +39,13 @@ impl SettingsManager {
             })?;
             serde_json::from_str(&content).unwrap_or_default()
         } else {
-            // Créer les paramètres par défaut
             let default_settings = AppSettings::default();
-
-            // Les sauvegarder dans le fichier
             let content = serde_json::to_string_pretty(&default_settings).map_err(|e| AppError {
                 message: format!("Failed to serialize default settings: {}", e),
             })?;
-
             fs::write(&settings_path, content).map_err(|e| AppError {
                 message: format!("Failed to write default settings file: {}", e),
             })?;
-
             default_settings
         };
 

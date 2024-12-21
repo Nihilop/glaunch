@@ -22,15 +22,14 @@
       </div>
 
       <!-- Game Image -->
-      <img
-        :src="game.media?.thumbnail ? debugImagePath(game.media.thumbnail) : ''"
+      <GameImage
+        :src="game.media?.thumbnail"
         :alt="game.metadata.title"
         :class="[
           'object-cover',
           viewMode === 'grid' ? 'w-full h-full rounded-md' : 'h-full w-24 rounded-md'
         ]"
-        @error="handleImageError"
-      >
+      />
 
       <!-- List Mode Info -->
       <div v-if="viewMode === 'list'" class="flex-1 pr-4">
@@ -66,6 +65,7 @@
 import LoadingSpinner from "@/components/LoadingSpinner.vue";
 import {convertFileSrc} from "@tauri-apps/api/core";
 import {useRouter} from "vue-router";
+import GameImage from "@/components/GameImage.vue";
 
 interface Props {
   showTitle?: boolean

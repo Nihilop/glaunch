@@ -8,6 +8,7 @@ use tauri::{
 use tauri_plugin_deep_link::DeepLinkExt;
 use tokio::time::Duration;
 use crate::utils::secrets::SecretsManager;
+use crate::utils::AppPaths;
 // Modules internes
 mod api;
 mod auth;
@@ -58,10 +59,6 @@ pub fn run() {
         .expect("Failed to create Tokio runtime");
     let rt = Arc::new(rt);
 
-    if let Err(e) = Logger::init() {
-        eprintln!("Failed to initialize logger: {}", e);
-    }
-
     let builder = tauri::Builder::default()
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_fs::init())
@@ -80,21 +77,33 @@ pub fn run() {
 
     builder
         .setup(move |app| {
+            let app_handle = app.handle();
+
+            // Initialize paths first
+            let paths = AppPaths::new(&app_handle)?;
+
+            // Secrets manager setup
             let secrets_manager = SecretsManager::new("glaunch");
 
-            // Valider les secrets requis
-            if let Err(e) = secrets_manager.validate_required_secrets() {
-                log_error!("Failed to validate secrets: {}", e);
-                // Décider si vous voulez continuer ou non
+            if let Err(e) = Logger::init(&app_handle) {
+                eprintln!("Failed to initialize logger: {}", e);
+            } else {
+                log_info!("Logger initialized successfully");  // Ajouter ce log pour vérifier
             }
 
-            // Debug les variables après chargement
+            // Validate required secrets
+            if let Err(e) = secrets_manager.validate_required_secrets() {
+                log_error!("Failed to validate secrets: {}", e);
+            }
+
+            // Debug environment variables
             for (key, _) in env::vars() {
                 if key.contains("IGDB") || key.contains("STEAM") || key.contains("EPIC") || key.contains("BATTLENET") {
                     log_debug!("After loading env file - Found env var: {}", key);
                 }
             }
-            // Configuration du tray
+
+            // Tray configuration
             let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
             let settings = MenuItem::with_id(app, "settings", "Settings", true, None::<&str>)?;
             let open = MenuItem::with_id(app, "open", "Open", true, None::<&str>)?;
@@ -110,6 +119,7 @@ pub fn run() {
                     "quit" => std::process::exit(0),
                     "settings" => {
                         if let Some(window) = app.get_webview_window("main") {
+                            let settings = SettingsManager::new(&app).unwrap();
                             let _ = window.eval("window.location.hash = '/settings'");
                             let _ = window.show();
                             let _ = window.set_focus();
@@ -141,18 +151,20 @@ pub fn run() {
 
             log_debug!("Setting up system tray");
 
-            // Initialisation de la base de données et des composants
+            // Initialize database
             log_info!("Initializing database...");
-            let database = match rt.block_on(async { Database::new().await }) {
-                Ok(db) => {
-                    log_info!("Database initialized successfully");
-                    Arc::new(db)
+            let database = rt.block_on(async {
+                match Database::new(&app_handle).await {
+                    Ok(db) => {
+                        log_info!("Database initialized successfully");
+                        Ok(Arc::new(db))
+                    }
+                    Err(e) => {
+                        log_error!("Failed to initialize database: {}", e);
+                        Err(Box::new(e) as Box<dyn std::error::Error>)
+                    }
                 }
-                Err(e) => {
-                    log_error!("Failed to initialize database: {}", e);
-                    return Err(Box::new(e) as Box<dyn std::error::Error>);
-                }
-            };
+            })?;
 
             // Auth server setup
             log_info!("Setting up auth server...");
@@ -175,16 +187,14 @@ pub fn run() {
 
             rt.spawn(async move {
                 log_info!("Starting game monitor loop");
-                // On lance simplement le monitoring et on laisse la fonction gérer sa propre boucle
                 monitor_clone.start_monitoring();
-                // Plus besoin de gérer la boucle ici car elle est dans start_monitoring
             });
 
             // GameManager setup
             log_info!("Setting up game manager...");
             let game_manager = GameManager::new(
                 database.clone(),
-                app.handle().clone(),
+                app_handle.clone(),
                 game_monitor.clone(),
                 igdb_client_id,
                 igdb_client_secret,
@@ -199,7 +209,7 @@ pub fn run() {
             app.manage(state);
 
             // Overlay setup
-            let overlay = GameOverlay::new(app.handle().clone()).expect("Failed to create overlay");
+            let overlay = GameOverlay::new(app_handle.clone()).expect("Failed to create overlay");
             let overlay_state = OverlayState {
                 overlay: Arc::new(Mutex::new(Some(overlay))),
             };
@@ -213,7 +223,7 @@ pub fn run() {
                 let app_handle = window.app_handle();
 
                 // Vérifier les paramètres sans async/await
-                let settings = SettingsManager::new().unwrap();
+                let settings = SettingsManager::new(&app_handle).unwrap();;
                 if settings.get_settings().minimize_to_tray {
                     log_info!("Minimizing to tray instead of closing");
                     window.hide().unwrap();

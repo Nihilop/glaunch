@@ -9,6 +9,8 @@ mod schema;
 use migrations::run_migrations;
 use crate::log_debug;
 use crate::log_error;
+use tauri::AppHandle;
+use crate::utils::AppPaths;
 
 pub use queries::{GameQueries, MetadataQueries, SessionQueries};
 
@@ -17,18 +19,9 @@ pub struct Database {
 }
 
 impl Database {
-    pub async fn new() -> Result<Self, AppError> {
-        let app_data = std::env::var("APPDATA").map_err(|_| AppError {
-            message: "Failed to get APPDATA path".to_string(),
-        })?;
-
-        let db_dir = PathBuf::from(app_data).join("glaunch");
-        std::fs::create_dir_all(&db_dir).map_err(|e| AppError {
-            message: format!("Failed to create database directory: {}", e),
-        })?;
-
-        let db_path = db_dir.join("games.db");
-        log_debug!("Database path: {}", db_path.display());
+    pub async fn new(app_handle: &AppHandle) -> Result<Self, AppError> {
+        let paths = AppPaths::new(app_handle)?;
+        let db_path = paths.get_database_path();
 
         let pool = SqlitePoolOptions::new()
             .max_connections(5)

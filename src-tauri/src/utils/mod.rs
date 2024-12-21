@@ -7,8 +7,10 @@ pub mod logger;
 pub mod settings;
 pub mod vdf;
 pub mod secrets;
+pub mod paths;
 
 pub use logger::Logger;
+pub use paths::AppPaths;
 
 #[derive(Debug)]
 pub struct AppError {

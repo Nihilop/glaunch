@@ -5,6 +5,8 @@ use std::fs::{create_dir_all, OpenOptions};
 use std::io::Write;
 use std::path::PathBuf;
 use std::sync::Mutex;
+use tauri::AppHandle;
+use crate::utils::AppPaths;
 
 lazy_static! {
     static ref LOG_PATH: Mutex<Option<PathBuf>> = Mutex::new(None);
@@ -21,19 +23,24 @@ pub enum LogLevel {
 pub struct Logger;
 
 impl Logger {
-    pub fn init() -> Result<(), AppError> {
-        let app_data = std::env::var("APPDATA").map_err(|e| AppError {
-            message: format!("Failed to get APPDATA path: {}", e),
-        })?;
+    pub fn init(app_handle: &AppHandle) -> Result<(), AppError> {
+        let paths = AppPaths::new(app_handle)?;
+        let log_path = paths.get_log_path();
 
-        let log_dir = PathBuf::from(app_data).join("glaunch").join("logs");
-        create_dir_all(&log_dir).map_err(|e| AppError {
-            message: format!("Failed to create log directory: {}", e),
-        })?;
+        // S'assurer que le répertoire des logs existe
+        if let Some(parent) = log_path.parent() {
+            create_dir_all(parent).map_err(|e| AppError {
+                message: format!("Failed to create log directory: {}", e),
+            })?;
+        }
 
-        let log_path = log_dir.join("app.log");
+        // Stocker le chemin avant d'ouvrir le fichier
+        {
+            let mut path_guard = LOG_PATH.lock().unwrap();
+            *path_guard = Some(log_path.clone());
+        }
 
-        // Initialize log file
+        // Ouvrir et initialiser le fichier de log
         let mut file = OpenOptions::new()
             .create(true)
             .append(true)
@@ -48,14 +55,15 @@ impl Logger {
             "\n[{}] [INFO] Application starting... Version: {}",
             timestamp,
             env!("CARGO_PKG_VERSION")
-        )
-        .map_err(|e| AppError {
+        ).map_err(|e| AppError {
             message: format!("Failed to write to log file: {}", e),
         })?;
 
-        // Store the log path
-        let mut path = LOG_PATH.lock().unwrap();
-        *path = Some(log_path);
+        // Écrire un log de test pour confirmer l'initialisation
+        Self::log(
+            LogLevel::Info,
+            &format!("Logger initialized successfully at: {}", log_path.display())
+        );
 
         Ok(())
     }
@@ -71,7 +79,9 @@ impl Logger {
                         LogLevel::Error => "ERROR",
                         LogLevel::Debug => "DEBUG",
                     };
-                    let _ = writeln!(file, "[{}] [{}] {}", timestamp, level_str, message);
+                    if let Err(e) = writeln!(file, "[{}] [{}] {}", timestamp, level_str, message) {
+                        eprintln!("Failed to write to log file: {}", e);
+                    }
                 }
             }
         }

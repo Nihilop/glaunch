@@ -6,6 +6,7 @@ use crate::services::igdb::IgdbGame;
 use crate::services::IgdbSearchResult;
 use crate::utils::AppError;
 use std::sync::Arc;
+use tauri::AppHandle;
 use crate::log_info;
 use crate::log_warn;
 use crate::log_error;
@@ -17,7 +18,7 @@ pub struct MetadataService {
 }
 
 impl MetadataService {
-    pub fn new(database: Arc<Database>, client_id: String, client_secret: String) -> Result<Self, AppError> {
+    pub fn new(database: Arc<Database>, app: AppHandle, client_id: String, client_secret: String) -> Result<Self, AppError> {
         // Obtenir le token d'accès IGDB - mais ne pas bloquer si ça échoue
         let access_token = tokio::runtime::Runtime::new()
             .unwrap()
@@ -29,7 +30,7 @@ impl MetadataService {
 
         Ok(Self {
             database,
-            igdb: Arc::new(IgdbService::new(client_id, access_token)?),
+            igdb: Arc::new(IgdbService::new(client_id, access_token, &app)?),
         })
     }
 

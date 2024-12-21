@@ -5,6 +5,7 @@ use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::time::{Duration, Instant};
 use tokio::time::sleep;
+use tauri::AppHandle;
 use crate::log_info;
 
 const IGDB_API_URL: &str = "https://api.igdb.com/v4";
@@ -69,21 +70,21 @@ pub struct IgdbSearchResult {
 }
 
 impl IgdbService {
-    pub fn new(client_id: String, access_token: String) -> Result<Self, AppError> {
+    pub fn new(client_id: String, access_token: String, app: &AppHandle) -> Result<Self, AppError> {
         if client_id.is_empty() || access_token.is_empty() {
             log_info!("Creating limited IGDB service without authentication");
             return Ok(Self {
                 client: Client::new(),
                 client_id,
                 access_token,
-                media_cache: MediaCache::new()?,
+                media_cache: MediaCache::new(app)?,
             });
         }
         Ok(Self {
             client: Client::new(),
             client_id,
             access_token,
-            media_cache: MediaCache::new()?,
+            media_cache: MediaCache::new(app)?,
         })
     }
 

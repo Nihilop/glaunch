@@ -14,30 +14,30 @@ struct DownloadProgress {
 }
 
 #[tauri::command]
-pub async fn get_app_settings() -> Result<AppSettings, String> {
-    let settings_manager = SettingsManager::new().map_err(|e| e.message)?;
+pub async fn get_app_settings(app_handle: tauri::AppHandle) -> Result<AppSettings, String> {
+    let settings_manager = SettingsManager::new(&app_handle).map_err(|e| e.message)?;
     Ok(settings_manager.get_settings().clone())
 }
 
 #[tauri::command]
-pub async fn save_app_settings(settings: AppSettings) -> Result<(), String> {
-    let mut settings_manager = SettingsManager::new().map_err(|e| e.message)?;
+pub async fn save_app_settings(app_handle: tauri::AppHandle, settings: AppSettings) -> Result<(), String> {
+    let mut settings_manager = SettingsManager::new(&app_handle).map_err(|e| e.message)?;
     settings_manager
         .update_settings(settings)
         .map_err(|e| e.message)
 }
 
 #[tauri::command]
-pub async fn export_db(path: String) -> Result<(), String> {
-    let settings_manager = SettingsManager::new().map_err(|e| e.message)?;
+pub async fn export_db(app_handle: tauri::AppHandle, path: String) -> Result<(), String> {
+    let settings_manager = SettingsManager::new(&app_handle).map_err(|e| e.message)?;
     settings_manager
         .export_database(PathBuf::from(path))
         .map_err(|e| e.message)
 }
 
 #[tauri::command]
-pub async fn import_db(path: String) -> Result<(), String> {
-    let settings_manager = SettingsManager::new().map_err(|e| e.message)?;
+pub async fn import_db(app_handle: tauri::AppHandle, path: String) -> Result<(), String> {
+    let settings_manager = SettingsManager::new(&app_handle).map_err(|e| e.message)?;
     settings_manager
         .import_database(PathBuf::from(path))
         .map_err(|e| e.message)
