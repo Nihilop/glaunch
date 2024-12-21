@@ -41,7 +41,7 @@
         "img-src": [
           "'self'",
           "asset:",
-          "https://asset.localhost",
+          "http://asset.localhost",
           "https://steamcommunity.com",
           "https://*.steampowered.com",
           "https://*.steamstatic.com",
