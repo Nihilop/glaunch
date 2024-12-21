@@ -68,7 +68,8 @@
                 :is-active="isGameActive && gameActiveIndex === index"
                 :loading="loadingMedia[game.id]"
                 :game
-                class="w-[15rem]"
+                class="w-[15rem] h-[15rem]"
+                view-mode="none"
               />
             </div>
           </div>

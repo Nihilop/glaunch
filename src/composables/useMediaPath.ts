@@ -1,5 +1,5 @@
-import { convertFileSrc } from '@tauri-apps/api/core'
-import {appDataDir, resolveResource} from '@tauri-apps/api/path'
+import {convertFileSrc} from '@tauri-apps/api/core'
+import {appDataDir} from '@tauri-apps/api/path'
 
 export function useMediaPath() {
   // Cache pour éviter de résoudre plusieurs fois le même chemin
@@ -8,26 +8,22 @@ export function useMediaPath() {
 
   const resolveMediaPath = async (path: string | null): Promise<string> => {
     if (!path) return '/placeholder-game.png'
+
     const appDataDirPath = await appDataDir()
-    console.log(appDataDirPath)
-    console.log(path)
-    // Vérifier le cache
-    if (pathCache.has(path)) {
-      return pathCache.get(path)!
-    }
+    console.log("Full path:", appDataDirPath + '/' + path) // Log pour debug
 
     try {
       if (path.startsWith('media/')) {
-        const convertedPath = convertFileSrc(appDataDirPath + '/' + path)
+        // Assurez-vous que le chemin est correctement formaté
+        const fullPath = `${appDataDirPath}/${path}`
+        const convertedPath = convertFileSrc(fullPath)
+        console.log("Converted path:", convertedPath) // Log pour debug
 
-        // Mettre en cache
         pathCache.set(path, convertedPath)
         return convertedPath
       }
 
-      const convertedPath = convertFileSrc(path)
-      pathCache.set(path, convertedPath)
-      return convertedPath
+      return '/placeholder-game.png'
     } catch (error) {
       console.error('Failed to resolve media path:', error)
       return '/placeholder-game.png'

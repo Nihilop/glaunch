@@ -28,11 +28,13 @@
       <!-- Panel Content -->
       <div class="p-8 space-y-8 max-h-full">
         <!-- Header -->
-        <header class="flex items-end space-x-4 -mt-[180px]">
+        <header class="flex items-end space-x-4 -mt-[150px]">
           <GameImage
             v-if="game"
             :src="game.media?.thumbnail"
             :alt="game.metadata.title"
+            type="thumb"
+            class="!w-auto"
           />
           <div>
             <div ref="actionsRef" class="flex gap-4 mb-4">

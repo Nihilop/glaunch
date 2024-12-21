@@ -1,9 +1,10 @@
 <template>
-  <nav class="w-16 z-50 h-screen absolute top-0 left-0 translate-y-0 transition-all duration-500">
+  <nav class="w-16 z-50 h-screen fixed top-0 left-0 translate-y-0 transition-all duration-500">
 
     <div
       ref="mainNavRef"
-      class="flex flex-col h-full bg-primary/20 items-center gap-3 p-2 backdrop-blur-sm border-r border-gray-800"
+      class="flex flex-col h-full bg-black/20 items-center gap-3 p-2 backdrop-blur-sm"
+      :class="{'border-r  border-gray-800' : isList}"
     >
       <!-- Remplacer RouterLink par des div/buttons -->
       <button
@@ -32,7 +33,7 @@ import {ref, watch} from "vue";
 import AddGameModal from "@/components/AddGameModal.vue";
 
 const mainNavRef = ref(null)
-const isDetails = ref(false)
+const isList = ref(false)
 const router = useRouter()
 const route = useRoute()
 const menuItems = ref([
@@ -65,7 +66,7 @@ const { isActive, activeIndex } = useZone(mainNavRef, {
 watch(
   () => route.fullPath,
   (newPath) => {
-    isDetails.value = newPath.includes('/details/');
+    isList.value = newPath.includes('/list');
   },
   { immediate: true } // Pour vérifier dès le montage du composant
 );

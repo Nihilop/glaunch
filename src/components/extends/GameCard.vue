@@ -1,16 +1,15 @@
 <template>
-  <div class="relative overflow-hidden">
-<!--    aspect-square-->
+  <div class="relative">
     <div
       @click="goTo"
       :class="[
-        'border-4 border-transparent overflow-hidden transition-all duration-300 z-10 group cursor-pointer',
-        viewMode === 'grid' ? 'h-48' : 'h-24',
+        'border-4 border-transparent overflow-hidden transition-all duration-300 z-10 group cursor-pointer rounded-xl h-full opacity-50 hover:opacity-100 bg-white:50',
+        viewMode === 'grid' ? 'h-48' : '',
         isActive
-          ? 'p-1 !border-blue-600'
+          ? 'p-1 !border-blue-600 !opacity-100 !blur-none'
           : 'hover:scale-[1.02]',
         loading && 'opacity-60',
-        viewMode === 'list' ? 'flex items-center gap-4' : 'rounded-xl',
+        viewMode === 'list' ? 'flex items-center gap-4 !h-24' : '',
       ]"
     >
       <!-- Loading Overlay -->
@@ -27,8 +26,10 @@
         :alt="game.metadata.title"
         :class="[
           'object-cover',
-          viewMode === 'grid' ? 'w-full h-full rounded-md' : 'h-full w-24 rounded-md'
+          {'w-full h-full rounded-md' : viewMode === 'grid'},
+          {'h-full !w-24 rounded-md' : viewMode === 'list'},
         ]"
+        :type="viewMode === 'grid' ? 'thumb' : 'default'"
       />
 
       <!-- List Mode Info -->
@@ -71,7 +72,7 @@ interface Props {
   showTitle?: boolean
   isActive?: boolean
   loading?: boolean
-  viewMode?: 'grid' | 'list'
+  viewMode?: 'grid' | 'list' | 'none'
   game: any
 }
 
