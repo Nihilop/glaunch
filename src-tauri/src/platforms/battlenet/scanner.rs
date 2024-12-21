@@ -7,6 +7,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
+use crate::log_debug;
 
 #[derive(Debug, Deserialize)]
 struct BnetConfig {
@@ -274,256 +275,175 @@ impl BattleNetGameScanner {
     }
 
     pub async fn scan_games(&self) -> GameResult<Vec<Game>> {
-        println!("🔍 Starting Battle.net games scan...");
+        log_debug!("🔍 Starting Battle.net games scan...");
 
-        // Chemins standard pour le launcher
         let base_paths = vec![
             PathBuf::from("C:\\Program Files (x86)"),
             PathBuf::from("C:\\Program Files"),
         ];
-        println!("📁 Checking base paths: {:?}", base_paths);
 
-        // Trouver le launcher Battle.net
         let bnet_launcher_path = self.find_battlenet_launcher(&base_paths)?;
-        println!("🎮 Found Battle.net launcher at: {:?}", bnet_launcher_path);
+        log_debug!("🎮 Found Battle.net launcher at: {:?}", bnet_launcher_path);
 
-        // Obtenir le chemin des jeux depuis la config
         let config_path = Self::get_config_path()?;
-        println!("📄 Reading config from: {:?}", config_path);
+        log_debug!("📄 Reading config from: {:?}", config_path);
 
         let config_content = fs::read_to_string(&config_path).map_err(|e| AppError {
-            message: format!("Erreur de lecture du fichier Battle.net.config: {}", e),
+            message: format!("Error reading Battle.net.config: {}", e),
         })?;
 
         let config: BnetConfig = serde_json::from_str(&config_content).map_err(|e| AppError {
-            message: format!("Erreur de parsing du fichier Battle.net.config: {}", e),
+            message: format!("Error parsing Battle.net.config: {}", e),
         })?;
 
-        // Debug de la config
-        println!("🔧 Found games in config:");
-        for (game_id, game_config) in &config.Games {
-            println!("    - Game ID: {}", game_id);
-            println!("      ServerUid: {}", game_config.ServerUid);
-            println!("      LastPlayed: {:?}", game_config.LastPlayed);
-        }
-
-        println!("📚 Known games in scanner:");
-        for (id, info) in &self.known_games {
-            println!("    - ID: {}", id);
-            println!("      Name: {}", info.name);
-            println!("      Directory: {}", info.game_dir);
-        }
-
-        // Trouver le chemin d'installation par défaut
-        let default_path = config
-            .Client
-            .Install
-            .as_ref()
-            .map(|install| PathBuf::from(&install.DefaultInstallPath))
-            .ok_or_else(|| AppError {
-                message: "Chemin d'installation Battle.net non trouvé".to_string(),
-            })?;
-
-        println!("📂 Default installation path: {:?}", default_path);
-
         let mut games = Vec::new();
+        let mut paths_to_check = Vec::new();
 
-        // Parcourir les jeux connus
-        for (game_id, game_info) in &self.known_games {
-            println!("\n🎮 Checking game: {} ({})", game_info.name, game_id);
+        // 1. Chemin d'installation par défaut s'il existe
+        if let Some(default_path) = config.Client.Install.as_ref().map(|install| PathBuf::from(&install.DefaultInstallPath)) {
+            paths_to_check.push(default_path);
+        }
 
-            // Vérifier si le jeu est installé selon la config Battle.net
-            if let Some(bnet_game) = config.Games.get(game_id) {
-                println!("    ✓ Found in Battle.net config");
+        // 2. Vérifier les chemins dans la config, y compris sous les tokens aléatoires
+        let mut found_battlenet_path = false;
+        for (token, server_info) in &config.servers {
+            if let Some(path) = &server_info.Path {
+                let path_buf = PathBuf::from(path);
+                if path_buf.ends_with("Battle.net") {
+                    log_debug!("Found Battle.net path under token {}: {:?}", token, path_buf);
+                    found_battlenet_path = true;
+                    // Si on trouve le dossier Battle.net, on l'ajoute en premier dans la liste
+                    paths_to_check.insert(0, path_buf.clone());
 
-                let install_path = default_path.join(game_info.game_dir);
-                println!("    📁 Checking install path: {:?}", install_path);
-
-                let game_exe_path = install_path
-                    .join(game_info.game_subdir)
-                    .join(game_info.game_exe);
-                println!("    🎯 Looking for executable: {:?}", game_exe_path);
-
-                if game_exe_path.exists() {
-                    println!("    ✅ Executable found!");
-                    match self.calculate_folder_size(&install_path) {
-                        Ok(size) => {
-                            println!("    💾 Size calculated: {} bytes", size);
-
-                            let launch_command = Self::create_launch_command(
-                                &bnet_launcher_path,
-                                &game_info.launch_code,
-                            );
-
-                            let last_played = bnet_game
-                                .LastPlayed
-                                .as_ref()
-                                .and_then(|ts| ts.parse::<i64>().ok());
-
-                            let game = Game {
-                                id: format!("battlenet_{}", game_id),
-                                platform_id: game_id.clone(),
-                                platform: Platform::BattleNet,
-                                title: game_info.name.to_string(),
-                                installation: GameInstallation {
-                                    install_path: install_path.clone(),
-                                    executable: Some(launch_command),
-                                    size,
-                                    version: None,
-                                    last_updated: bnet_game
-                                        .LastActioned
-                                        .as_ref()
-                                        .and_then(|ts| ts.parse().ok()),
-                                },
-                                metadata: GameMetadata {
-                                    title: game_info.name.to_string(),
-                                    description: None,
-                                    developer: Some("Blizzard Entertainment".to_string()),
-                                    publisher: Some("Blizzard Entertainment".to_string()),
-                                    release_date: None,
-                                    genres: Vec::new(),
-                                    tags: Vec::new(),
-                                    media: None,
-                                },
-                                media: GameMedia {
-                                    thumbnail: None,
-                                    cover: None,
-                                    screenshots: Vec::new(),
-                                    background: None,
-                                    icon: None,
-                                    logo: None,
-                                },
-                                last_played,
-                                stats: GameStats {
-                                    total_playtime: 0,
-                                    last_session_duration: 0,
-                                    sessions_count: 0,
-                                    first_played: None,
-                                    last_played: None,
-                                },
-                            };
-
-                            println!("    ✨ Game added to list: {}", game_info.name);
-                            games.push(game);
-                        }
-                        Err(e) => println!("    ❌ Error calculating size: {}", e),
+                    // On ajoute aussi le dossier parent qui pourrait contenir d'autres jeux
+                    if let Some(parent) = path_buf.parent() {
+                        paths_to_check.push(parent.to_path_buf());
                     }
-                } else {
-                    println!("    ❌ Executable not found!");
                 }
-            } else {
-                println!("    ❌ Not found in Battle.net config!");
             }
         }
 
-        println!("\n📊 Scan complete! Found {} games", games.len());
+        // 3. Ajouter les chemins standards si on n'a pas trouvé de chemin Battle.net explicite
+        if !found_battlenet_path {
+            let standard_paths = vec![
+                PathBuf::from("C:\\Program Files (x86)\\Battle.net"),
+                PathBuf::from("C:\\Program Files\\Battle.net"),
+            ];
+
+            for path in standard_paths {
+                if path.exists() {
+                    log_debug!("Adding standard Battle.net path: {:?}", path);
+                    paths_to_check.insert(0, path);
+                }
+            }
+        }
+
+        // 3. Base du launcher Battle.net
+        let launcher_base = bnet_launcher_path.parent().unwrap_or(&bnet_launcher_path).to_path_buf();
+        paths_to_check.push(launcher_base);
+
+        log_debug!("📂 Found possible installation paths:");
+        for path in &paths_to_check {
+            log_debug!("   - {:?}", path);
+        }
+
+        for game_id in config.Games.keys() {
+            if let Some(game_info) = self.known_games.get(game_id) {
+                log_debug!("\n🎮 Checking game: {} ({})", game_info.name, game_id);
+
+                let mut found = false;
+                for base_path in &paths_to_check {
+                    // Vérifier le chemin direct
+                    let direct_path = base_path.join(game_info.game_dir);
+
+                    // Vérifier dans les sous-dossiers (pour les tokens générés)
+                    let mut possible_paths = vec![direct_path.clone()];
+                    if let Ok(entries) = fs::read_dir(base_path) {
+                        for entry in entries.flatten() {
+                            if entry.path().is_dir() {
+                                let game_path = entry.path().join(game_info.game_dir);
+                                if game_path != direct_path {
+                                    possible_paths.push(game_path);
+                                }
+                            }
+                        }
+                    }
+
+                    for install_path in possible_paths {
+                        let game_exe_path = install_path
+                            .join(game_info.game_subdir)
+                            .join(game_info.game_exe);
+
+                        if game_exe_path.exists() {
+                            log_debug!("    ✅ Found game at: {:?}", install_path);
+
+                            if let Ok(size) = self.calculate_folder_size(&install_path) {
+                                let launch_command = Self::create_launch_command(
+                                    &bnet_launcher_path,
+                                    &game_info.launch_code,
+                                );
+
+                                let game = Game {
+                                    id: format!("battlenet_{}", game_id),
+                                    platform_id: game_id.clone(),
+                                    platform: Platform::BattleNet,
+                                    title: game_info.name.to_string(),
+                                    installation: GameInstallation {
+                                        install_path: install_path.clone(),
+                                        executable: Some(launch_command),
+                                        size,
+                                        version: None,
+                                        last_updated: config.Games.get(game_id)
+                                            .and_then(|g| g.LastActioned.as_ref())
+                                            .and_then(|ts| ts.parse().ok()),
+                                    },
+                                    metadata: GameMetadata {
+                                        title: game_info.name.to_string(),
+                                        description: None,
+                                        developer: Some("Blizzard Entertainment".to_string()),
+                                        publisher: Some("Blizzard Entertainment".to_string()),
+                                        release_date: None,
+                                        genres: Vec::new(),
+                                        tags: Vec::new(),
+                                        media: None,
+                                    },
+                                    media: GameMedia {
+                                        thumbnail: None,
+                                        cover: None,
+                                        screenshots: Vec::new(),
+                                        background: None,
+                                        icon: None,
+                                        logo: None,
+                                    },
+                                    last_played: None,
+                                    stats: GameStats {
+                                        total_playtime: 0,
+                                        last_session_duration: 0,
+                                        sessions_count: 0,
+                                        first_played: None,
+                                        last_played: None,
+                                    },
+                                };
+
+                                games.push(game);
+                                found = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if found {
+                        break;
+                    }
+                }
+
+                if !found {
+                    log_debug!("    ❌ Game not found in any location: {}", game_info.name);
+                }
+            }
+        }
+
+        log_debug!("\n📊 Scan complete! Found {} games", games.len());
         Ok(games)
     }
-
-    //     pub async fn scan_games(&self) -> GameResult<Vec<Game>> {
-    //         // Chemins standard pour le launcher
-    //         let base_paths = vec![
-    //             PathBuf::from("C:\\Program Files (x86)"),
-    //             PathBuf::from("C:\\Program Files"),
-    //         ];
-    //
-    //         // Trouver le launcher Battle.net
-    //         let bnet_launcher_path = self.find_battlenet_launcher(&base_paths)?;
-    //
-    //         // Obtenir le chemin des jeux depuis la config
-    //         let config_path = Self::get_config_path()?;
-    //
-    //         let config_content = fs::read_to_string(&config_path).map_err(|e| AppError {
-    //             message: format!("Erreur de lecture du fichier Battle.net.config: {}", e),
-    //         })?;
-    //
-    //         let config: BnetConfig = serde_json::from_str(&config_content).map_err(|e| AppError {
-    //             message: format!("Erreur de parsing du fichier Battle.net.config: {}", e),
-    //         })?;
-    //
-    //         // Trouver le chemin d'installation par défaut
-    //         let default_path = config
-    //             .Client
-    //             .Install
-    //             .as_ref()
-    //             .map(|install| PathBuf::from(&install.DefaultInstallPath))
-    //             .ok_or_else(|| AppError {
-    //                 message: "Chemin d'installation Battle.net non trouvé".to_string(),
-    //             })?;
-    //
-    //         let mut games = Vec::new();
-    //
-    //         // Parcourir les jeux connus
-    //         for (game_id, game_info) in &self.known_games {
-    //             // Vérifier si le jeu est installé selon la config Battle.net
-    //             if let Some(bnet_game) = config.Games.get(game_id) {
-    //                 let install_path = default_path.join(game_info.game_dir);
-    //                 let game_exe_path = install_path
-    //                     .join(game_info.game_subdir)
-    //                     .join(game_info.game_exe);
-    //
-    //                 if game_exe_path.exists() {
-    //                     match self.calculate_folder_size(&install_path) {
-    //                         Ok(size) => {
-    //                             let launch_command = Self::create_launch_command(
-    //                                 &bnet_launcher_path,
-    //                                 &game_info.launch_code,
-    //                             );
-    //
-    //                             // Convertir le LastPlayed en timestamp si disponible
-    //                             let last_played = bnet_game
-    //                                 .LastPlayed
-    //                                 .as_ref()
-    //                                 .and_then(|ts| ts.parse::<i64>().ok());
-    //
-    //                             games.push(Game {
-    //                                 id: format!("battlenet_{}", game_id),
-    //                                 platform_id: game_id.clone(),
-    //                                 platform: Platform::BattleNet,
-    //                                 title: game_info.name.to_string(),
-    //                                 installation: GameInstallation {
-    //                                     install_path: install_path.clone(),
-    //                                     executable: Some(launch_command),
-    //                                     size,
-    //                                     version: None,
-    //                                     last_updated: bnet_game
-    //                                         .LastActioned
-    //                                         .as_ref()
-    //                                         .and_then(|ts| ts.parse().ok()),
-    //                                 },
-    //                                 metadata: GameMetadata {
-    //                                     title: game_info.name.to_string(),
-    //                                     description: None,
-    //                                     developer: Some("Blizzard Entertainment".to_string()),
-    //                                     publisher: Some("Blizzard Entertainment".to_string()),
-    //                                     release_date: None,
-    //                                     genres: Vec::new(),
-    //                                     tags: Vec::new(),
-    //                                     media: None,
-    //                                 },
-    //                                 media: GameMedia {
-    //                                     thumbnail: None,
-    //                                     cover: None,
-    //                                     screenshots: Vec::new(),
-    //                                     background: None,
-    //                                     icon: None,
-    //                                     logo: None,
-    //                                 },
-    //                                 last_played,
-    //                                 stats: GameStats {
-    //                                     total_playtime: 0,
-    //                                     last_session_duration: 0,
-    //                                     sessions_count: 0,
-    //                                     first_played: None,
-    //                                     last_played: None,
-    //                                 },
-    //                             });
-    //                         }
-    //                         Err(e) => println!("    ❌ Erreur lors du calcul de la taille: {}", e),
-    //                     }
-    //                 }
-    //             }
-    //         }
-    //         Ok(games)
-    //     }
 }
