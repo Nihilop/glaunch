@@ -23,7 +23,7 @@
         />
         <div :class="{'translate-y-24': query}" class="transition-all duration-500">
           <h1  class="text-6xl translate-y-0 mb-4">
-            Bonjour, joueur #000
+            Bonjour, {{appStore.pseudo}}
           </h1>
           <span class="text-normal opacity-40 pl-8">
           Taper pour rechercher...
@@ -122,6 +122,7 @@ import {
 } from "@/components/extends/background";
 import GameBackground from "@/components/GameBackground.vue";
 import {useHorizontalWheelScroll} from "@/composables/useHorizontalScroll.ts";
+import {useAppStore} from "@/stores/app.ts";
 
 const router = useRouter()
 // Refs
@@ -136,7 +137,7 @@ const initialLoading = ref(true)
 const isLoading = ref(false)
 const loadingMedia = ref<Record<string, boolean>>({})
 const Shifted = useKeyModifier('Shift')
-
+const appStore = useAppStore()
 // Navigation Setup - Une seule région
 const {regionId} = useRegion({
   priority: 2, // Plus basse priorité que le header

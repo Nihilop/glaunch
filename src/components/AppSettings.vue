@@ -101,6 +101,11 @@
         </div>
       </div>
 
+      <div>
+        <h4 class="font-medium text-foreground/50">Pseudos</h4>
+        <Input v-model="appStore.nickname" />
+      </div>
+
       <!-- Database Section -->
       <div class="space-y-3">
         <h4 class="font-medium text-foreground/50">Base de données</h4>
@@ -138,6 +143,7 @@
 import { ref, onMounted } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { save, open } from '@tauri-apps/plugin-dialog'
+import {useAppStore} from "@/stores/app.ts";
 
 interface AppSettings {
   start_with_windows: boolean
@@ -169,6 +175,7 @@ const updateStatus = ref<UpdateStatus>({
 
 const isCheckingUpdate = ref(false)
 const isInstallingUpdate = ref(false)
+const appStore = useAppStore()
 
 async function loadSettings() {
   try {

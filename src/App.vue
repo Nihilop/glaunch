@@ -1,16 +1,46 @@
 <template>
-  <RouterView />
+  <div>
+    <RouterView />
+
+    <Dialog v-model:open="setupNicknameModal">
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Nickname</DialogTitle>
+        </DialogHeader>
+        <Input v-model="nicknameInput" @keydown.enter="setPseudo"/>
+        <Button variant="success" @click="setPseudo">
+          Ajouter
+        </Button>
+      </DialogContent>
+    </Dialog>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { listen } from '@tauri-apps/api/event'
 import { useRouter } from 'vue-router'
-import {onMounted} from "vue";
+import {onMounted, ref} from "vue";
+import {useAppStore} from "@/stores/app.ts";
+import {Dialog, DialogContent, DialogHeader, DialogTitle} from "@/components/ui/dialog";
+
 
 const router = useRouter()
+const appStore = useAppStore()
 let previousRoute = '/'
+const setupNicknameModal = ref(false)
+const nicknameInput = ref(appStore.pseudo || '')
+
+async function setPseudo() {
+  if(!nicknameInput.value) return
+  await appStore.setNickname(nicknameInput.value).finally(() => {
+    setupNicknameModal.value = false
+  })
+}
 
 onMounted(async () => {
+  if(!appStore.pseudo) {
+    setupNicknameModal.value = true
+  }
   await listen('toggle-overlay-view', () => {
     if (router.currentRoute.value.path === '/overlay') {
       router.push(previousRoute)

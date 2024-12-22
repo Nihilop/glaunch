@@ -1,5 +1,5 @@
 <template>
-  <div data-tauri-drag-region class="select-none flex fixed top-0 left-0 right-0 justify-end h-12 items-center transition-all duration-500 space-x-4 px-5 z-40 group bg-gradient-to-b hover:from-background hover:from-50% hover:to-transparent">
+  <div data-tauri-drag-region class="select-none flex fixed top-0 left-0 right-0 justify-end h-12 items-center transition-all duration-500 space-x-4 px-5 z-40 group bg-gradient-to-b hover:from-background/50 hover:from-50% hover:to-transparent">
     <div @click="minimize()" class="flex items-center justify-center hover:bg-white/20 p-1 rounded-md cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity duration-500" id="titlebar-minimize">
       <Minus class="w-4 h-4"/>
     </div>
