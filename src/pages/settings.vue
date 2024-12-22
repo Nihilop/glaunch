@@ -2,7 +2,7 @@
   <div class="p-6">
     <h2 class="text-2xl font-bold mb-6">Paramètres</h2>
 
-    <section id="oauth" class="flex flex-wrap gap-2 max-w-screen-lg">
+    <section id="oauth" class="hidden flex-wrap gap-2 max-w-screen-lg">
       <!-- Steam Section -->
       <div class="flex-1 rounded-lg bg-gray-800 shadow p-4 mb-6">
         <h3 class="text-lg font-semibold mb-4">Connexion Steam</h3>

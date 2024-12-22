@@ -16,6 +16,7 @@
           {'mt-auto' : item.path === '#'}
         ]"
         @click="() => router.push(item.path)"
+        @mouseover="() => setActiveElement(index)"
       >
         <component
           :is="item.icon"
@@ -52,7 +53,7 @@ const { regionId } = useRegion({
 })
 
 
-const { isActive, activeIndex } = useZone(mainNavRef, {
+const { isActive, activeIndex, setActiveElement } = useZone(mainNavRef, {
   id: 'mainNav',
   type: 'vertical',
   memory: false,

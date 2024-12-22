@@ -10,16 +10,11 @@ export function useMediaPath() {
     if (!path) return '/placeholder-game.png'
 
     const appDataDirPath = await appDataDir()
-    console.log("Full path:", appDataDirPath + '/' + path) // Log pour debug
 
     try {
       if (path.startsWith('media/')) {
-        // Assurez-vous que le chemin est correctement formaté
         const fullPath = await join(appDataDirPath, path);
-
         const convertedPath = convertFileSrc(fullPath)
-        console.log("Converted path:", convertedPath) // Log pour debug
-
         pathCache.set(path, convertedPath)
         return convertedPath
       }

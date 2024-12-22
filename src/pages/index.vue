@@ -53,10 +53,10 @@
           >
             <h1 class="text-3xl w-full">Aucun résultat</h1>
           </PatternBackground>
-          <div class="px-4 flex flex-col justify-end  h-full">
+          <div class="px-4">
             <div
               ref="gamesListRef"
-              class="grid grid-flow-col auto-cols-[15rem] gap-4 overflow-x-auto hide-scrollbar"
+              class="grid grid-flow-col auto-cols-[15rem] gap-4 overflow-y-hidden overflow-x-auto hide-scrollbar"
             >
               <GameCard
                 v-for="(game, index) in filteredGames"
@@ -118,8 +118,8 @@ import {
   PATTERN_BACKGROUND_DIRECTION,
   PATTERN_BACKGROUND_VARIANT,
 } from "@/components/extends/background";
-import {useMediaPath} from "@/composables/useMediaPath.ts";
 import GameBackground from "@/components/GameBackground.vue";
+import {useHorizontalWheelScroll} from "@/composables/useHorizontalScroll.ts";
 
 const router = useRouter()
 // Refs
@@ -161,6 +161,12 @@ const {isActive: isGameActive, activeIndex: gameActiveIndex, updateBounds, setAc
   }
 })
 
+const { resetEventListener } = useHorizontalWheelScroll(gamesListRef, {
+  forceHorizontal: true,
+  sensitivity: 2,  // Plus sensible pour un meilleur contrôle
+  smooth: true
+})
+
 // Computed
 
 const filteredGames = computed(() => {
@@ -190,8 +196,6 @@ const loadGames = async (useCache = true) => {
       ...game,
       media: game.media || {}
     }))
-
-    console.log(result)
 
     if (!useCache) {
       isLoading.value = true
@@ -261,7 +265,9 @@ const initializeComponent = async () => {
 }
 
 // Lifecycle
-onMounted(initializeComponent)
+onMounted(() => {
+  initializeComponent()
+})
 
 watch(filteredGames, () => {
   nextTick(() => {
@@ -270,6 +276,14 @@ watch(filteredGames, () => {
     }
   })
 })
+
+watch([gamesListRef, initialLoading], ([ref, isLoading]) => {
+  if (ref && !isLoading) {
+    nextTick(() => {
+      resetEventListener()
+    })
+  }
+}, { immediate: true })
 </script>
 
 <style lang="scss" scoped>
@@ -281,6 +295,7 @@ watch(filteredGames, () => {
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
 
 .slide-up-enter-active,
 .slide-up-leave-active {
