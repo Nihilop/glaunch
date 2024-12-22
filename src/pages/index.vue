@@ -1,11 +1,13 @@
 <template>
-  <main class="relative min-h-screen bg-gray-900 text-white overflow-hidden flex flex-col pt-24">
+  <main class="relative min-h-screen overflow-hidden flex flex-col pt-24">
     <!-- Search Input -->
 
     <!-- Dynamic Background -->
     <div class="fixed inset-0 transition-opacity duration-700 overflow-hidden">
-      <GameBackground v-if="activeGame?.media?.background" :src="activeGame.media.background" alt="background" />
-      <div class="absolute inset-0 bg-gradient-to-t from-gray-900 via-80% via-gray-900/40 to-gray-900/85 "/>
+      <Transition name="fade">
+        <GameBackground v-if="activeGame?.media?.background" :src="activeGame.media.background" alt="background" :key="activeGame?.media?.background" />
+      </Transition>
+      <div class="absolute inset-0 bg-gradient-to-t from-background/30 via-80% via-background/40 to-background/60 dark:from-background dark:to-background/85"/>
     </div>
 
     <!-- Content -->
@@ -16,7 +18,7 @@
           ref="inputRef"
           type="text"
           v-model="query"
-          class="z-10 rounded-md text-xl uppercase w-full px-2 py-2 max-w-screen-md mx-auto bg-white/20 backdrop-blur -translate-y-24 transition-all duration-500 border-transparent focus-visible:border-white/10 border "
+          class="z-10 rounded-md text-xl uppercase w-full px-2 py-2 max-w-screen-md mx-auto bg-black/20 dark:bg-white/20 backdrop-blur -translate-y-24 transition-all duration-500 border-transparent focus-visible:border-white/10 border "
           :class="{'!translate-y-0' : query}"
         />
         <div :class="{'translate-y-24': query}" class="transition-all duration-500">
@@ -71,7 +73,7 @@
 
             <transition name="slide-up">
               <div v-show="filteredGames[gameActiveIndex]" :key="filteredGames[gameActiveIndex]">
-                <h1 class="text-7xl pl-8">{{ filteredGames[gameActiveIndex]?.name || '' }}</h1>
+                <h1 class="text-7xl pl-8 text-foreground/80 font-bold">{{ filteredGames[gameActiveIndex]?.name || '' }}</h1>
                 <div
                   class="space-x-2 ml-8 mt-4">
                   <GameTag
@@ -151,6 +153,7 @@ const {isActive: isGameActive, activeIndex: gameActiveIndex, updateBounds, setAc
   id: 'gamesList',
   type: 'horizontal',
   memory: true,
+  hoverable: true,
   onSelect: (index) => {
     const game = filteredGames.value[index]
     if (Shifted.value) {
@@ -312,6 +315,16 @@ watch([gamesListRef, initialLoading], ([ref, isLoading]) => {
   position: absolute;
   opacity: 0;
   transform: translateY(-20px);
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: all 200ms ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 
 .animate-rotate {

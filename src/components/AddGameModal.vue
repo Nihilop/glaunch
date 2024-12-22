@@ -1,7 +1,7 @@
 <template>
   <Dialog :open="isOpen" @update:open="isOpen = $event">
     <DialogTrigger asChild>
-      <CirclePlus class="w-5 h-5 hover:scale-110 transition-all duration-500" />
+      <CirclePlus class="w-5 h-5 hover:scale-110 transition-all duration-500 text-foreground" />
     </DialogTrigger>
 
     <DialogContent class="sm:max-w-[425px]">

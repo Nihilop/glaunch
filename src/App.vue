@@ -22,7 +22,7 @@ onMounted(async () => {
 })
 </script>
 
-<style>
+<style lang="scss">
 html, body, #app {
   overflow-x: hidden;
 }
@@ -50,10 +50,9 @@ html, body, #app {
 
 
 body {
-  --sb-track-color: #111927;
-  --sb-thumb-color: #4949ff;
-  --sb-size: 7px;
-  background: var(--sb-track-color);
+  --sb-track-color: #15171e;
+  --sb-thumb-color: #1f2937;
+  --sb-size: 15px;
 }
 
 ::-webkit-scrollbar {
@@ -68,7 +67,7 @@ body {
 ::-webkit-scrollbar-thumb {
   background: var(--sb-thumb-color);
   border-radius: 7px;
-  border: 2px solid var(--sb-track-color);
+  border: 5px solid var(--sb-track-color);
 }
 
 @supports not selector(::-webkit-scrollbar) {

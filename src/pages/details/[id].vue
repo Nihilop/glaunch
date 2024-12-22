@@ -1,5 +1,5 @@
 <template>
-  <main class="absolute w-full h-screen bg-gray-900 text-white overflow-hidden">
+  <main class="absolute w-full h-screen bg-gray-900 overflow-hidden">
     <!-- Dynamic Background -->
     <div class="absolute inset-0 transition-opacity duration-500">
       <GameBackground v-if="game?.media?.background || game?.media?.cover" :src="game.media.background || game.media.cover" alt="background" />
@@ -9,7 +9,7 @@
     <!-- Back Button -->
     <button
       @click="router.back()"
-      class="absolute top-4 left-4 py-2 pl-2 pr-4 rounded-lg bg-black/20 hover:bg-black/70 transition-colors z-50 flex items-center space-x-3"
+      class="absolute top-4 left-4 py-2 pl-2 pr-4 rounded-lg bg-background/50 hover:bg-black/70 transition-colors z-50 flex items-center space-x-3"
     >
       <ChevronLeft /> <CommandShortcut>Echap</CommandShortcut>
     </button>
@@ -18,7 +18,7 @@
     <div
       ref="contentRef"
       :class="[
-        'absolute bottom-0 left-0 right-0 bg-gray-900/95 backdrop-blur-sm',
+        'absolute bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm',
         'transform transition-transform duration-700 ease-out',
         'h-[70vh]',
         isLoaded ? 'translate-y-0' : 'translate-y-full'
@@ -26,9 +26,9 @@
     >
 
       <!-- Panel Content -->
-      <div class="p-8 space-y-8 max-h-full">
+      <div v-if="!isLoading" class="p-8 space-y-8 h-full">
         <!-- Header -->
-        <header class="flex items-end space-x-4 -mt-[150px]">
+        <header class="flex items-end space-x-4 -mt-[158px]">
           <GameImage
             v-if="game"
             :src="game.media?.thumbnail"
@@ -36,27 +36,28 @@
             type="thumb"
             class="!w-auto"
           />
-          <div>
-            <div ref="actionsRef" class="flex gap-4 mb-4">
-              <button
+          <div class="flex-1">
+            <div ref="actionsRef" class="flex gap-4 mb-4 w-full">
+              <Button
                 v-for="(action, index) in actions"
                 :key="action.label"
+                size="lg"
                 :class="[
-                    'px-6 py-3 rounded-lg font-medium transition-all duration-200',
                     isActionsActive && actionsActiveIndex === index
                       ? 'ring-4 ring-blue-500'
                       : '',
-                    action.primary ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-800 hover:bg-gray-700'
+                      {'ml-auto mr-12' : index === actions.length - 1}
                   ]"
+                :variant="index === actions.length - 1 ? 'destructive' : action.primary ? 'info' : 'default'"
                 @click="clickActions(index)"
               >
-                {{ action.label }}
-              </button>
+                <Trash2 v-if="index === actions.length - 1" />
+                <span v-else>
+                  {{ action.label }}
+                </span>
+              </Button>
               <Dialog v-model:open="modal">
                 <DialogContent class="sm:max-w-[800px] grid-rows-[auto_minmax(0,1fr)_auto] p-0 max-h-[90dvh]">
-                  <DialogHeader>
-                    <DialogTitle>Update metadata</DialogTitle>
-                  </DialogHeader>
                   <div class="grid gap-4 py-4 overflow-y-auto px-6">
                     <div class="flex flex-col justify-between h-[300dvh]">
                       <ul v-if="gameMeta.length" ref="metaUpdateModal" class="space-y-4">
@@ -101,7 +102,7 @@
                 </DialogContent>
               </Dialog>
             </div>
-            <h1 class="text-4xl font-bold mb-2">{{ game?.name }}</h1>
+            <h1 class="text-4xl font-bold mb-2 text-foreground">{{ game?.name }}</h1>
             <div class="flex items-center gap-4 text-gray-400">
               <span>{{ game?.metadata.developer }}</span>
               <span>·</span>
@@ -116,33 +117,33 @@
               <!-- Game Stats -->
               <div class="flex gap-8">
                 <div class="flex flex-col items-center p-4 rounded-lg hover:bg-gray-800">
-                  <span class="text-2xl font-bold">{{ formatGameStats(game?.stats)?.playTime }}</span>
-                  <span class="text-sm text-gray-400">Play Time</span>
+                  <span class="text-2xl font-bold text-foreground/40">{{ formatGameStats(game?.stats)?.playTime }}</span>
+                  <span class="text-sm text-foreground/50">Play Time</span>
                 </div>
 
                 <div class="flex flex-col items-center p-4 rounded-lg hover:bg-gray-800">
-                  <span class="text-2xl font-bold">{{ formatGameStats(game?.stats)?.lastPlayed }}</span>
-                  <span class="text-sm text-gray-400">Last Played</span>
+                  <span class="text-2xl font-bold text-foreground/40">{{ formatGameStats(game?.stats)?.lastPlayed }}</span>
+                  <span class="text-sm text-foreground/50">Last Played</span>
                 </div>
 
                 <div class="flex flex-col items-center p-4 rounded-lg hover:bg-gray-800">
-                  <span class="text-2xl font-bold">{{ formatGameStats(game?.stats)?.sessionsCount }}</span>
-                  <span class="text-sm text-gray-400">Times Launched</span>
+                  <span class="text-2xl font-bold text-foreground/40">{{ formatGameStats(game?.stats)?.sessionsCount }}</span>
+                  <span class="text-sm text-foreground/50">Times Launched</span>
                 </div>
               </div>
               <!-- Game Info -->
               <div class="space-y-6">
                 <!-- Description -->
                 <div v-if="game?.metadata.description" class="prose prose-invert max-w-none">
-                  <h2 class="text-xl font-bold mb-4">About</h2>
+                  <h2 class="text-xl font-bold mb-4 text-foreground/50">About</h2>
                   <div>
-                    <p>{{game.metadata.description}}</p>
+                    <p class="text-foreground">{{game.metadata.description}}</p>
                   </div>
                 </div>
 
                 <!-- Genres -->
                 <div v-if="game?.metadata.genres?.length">
-                  <h2 class="text-xl font-bold mb-4">Genres</h2>
+                  <h2 class="text-xl font-bold mb-4 text-foreground/50">Genres</h2>
                   <div class="flex flex-wrap gap-2">
                     <span
                       v-for="genre in game.metadata.genres"
@@ -156,7 +157,7 @@
 
                 <!-- Installation Info -->
                 <div class="space-y-2">
-                  <h2 class="text-xl font-bold mb-4">Installation</h2>
+                  <h2 class="text-xl font-bold mb-4 text-foreground/50">Installation</h2>
                   <p class="font-bold text-gray-400">
                     Size: <span class="font-normal opacity-60">{{ formatSize(game?.installation.install_size || 0) }}</span>
                   </p>
@@ -168,29 +169,41 @@
             </div>
           </div>
         </div>
+
+        <Dialog v-model:open="showDeleteConfirm">
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete Game</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete "{{ game?.title }}" from your library? This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="ghost" @click="showDeleteConfirm = false">Cancel</Button>
+              <Button
+                variant="destructive"
+                :disabled="isDeleting"
+                @click="handleDelete"
+              >
+                <Loader2 v-if="isDeleting" class="mr-2 h-4 w-4 animate-spin" />
+                {{ isDeleting ? 'Deleting...' : 'Delete' }}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
       </div>
 
-      <Dialog v-model:open="showDeleteConfirm">
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Game</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete "{{ game?.title }}" from your library? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="ghost" @click="showDeleteConfirm = false">Cancel</Button>
-            <Button
-              variant="destructive"
-              :disabled="isDeleting"
-              @click="handleDelete"
-            >
-              <Loader2 v-if="isDeleting" class="mr-2 h-4 w-4 animate-spin" />
-              {{ isDeleting ? 'Deleting...' : 'Delete' }}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <div v-else>
+        <div class="flex items-center justify-center min-h-[50vh]">
+          <div class="flex items-center gap-3 bg-white/10 px-6 py-4 rounded-xl backdrop-blur-sm">
+            <LoadingSpinner/>
+            <span>Mise à jour en cours</span>
+          </div>
+        </div>
+      </div>
+
+
     </div>
   </main>
 </template>
@@ -199,11 +212,12 @@
 import {onMounted, onUnmounted, ref} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
 import {useRegion, useZone} from '@/composables/KeyboardPlugin'
-import {convertFileSrc, invoke} from "@tauri-apps/api/core"
-import {ChevronLeft, Loader2} from 'lucide-vue-next'
+import {invoke} from "@tauri-apps/api/core"
+import {ChevronLeft, Loader2, Trash2} from 'lucide-vue-next'
 import {Dialog, DialogContent, DialogHeader, DialogTitle,} from '@/components/ui/dialog'
 import GameBackground from "@/components/GameBackground.vue";
 import GameImage from "@/components/GameImage.vue";
+import LoadingSpinner from "@/components/LoadingSpinner.vue";
 
 interface IgdbSearchResult {
   id: number;
@@ -215,7 +229,7 @@ interface IgdbSearchResult {
 
 const route = useRoute()
 const router = useRouter()
-
+const isLoading = ref(false)
 // Refs
 const statsRef = ref<HTMLElement | null>(null)
 const actionsRef = ref<HTMLElement | null>(null)
@@ -273,7 +287,12 @@ async function updateGameWithIgdb(gameId: string, igdbId: number): Promise<void>
 }
 
 async function updateMetadata(id: number) {
-  await updateGameWithIgdb(game.value.id, id).finally(() => router.push('/'))
+  isLoading.value = true
+  await updateGameWithIgdb(game.value.id, id).finally(async () => {
+    await loadGame()
+    modal.value = false
+    isLoading.value = false
+  })
 }
 
 // Constants

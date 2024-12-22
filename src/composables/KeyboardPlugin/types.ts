@@ -39,6 +39,7 @@ export interface ZoneConfig {
   columns?: number
   memory?: boolean
   group?: string
+  hoverable?: boolean
   onSelect?: (index: number) => void
   onFocus?: (index: number) => void
   onBlur?: (index: number) => void
@@ -48,6 +49,7 @@ export interface NavigableZone extends ZoneConfig {
   ref: HTMLElement | null
   items: HTMLElement[]
   bounds: Bounds | null
+  _lastActivationSource?: 'keyboard' | 'mouse'
 }
 
 export interface NavigableRegion {

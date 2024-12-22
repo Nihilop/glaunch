@@ -7,15 +7,15 @@
     leave-from-class="transform translate-y-0 opacity-100"
     leave-to-class="transform translate-y-8 opacity-0"
   >
-    <div
+    <Card
       v-if="activeGame"
-      class="fixed bottom-4 right-4 z-50"
+      class="fixed bottom-4 right-4 z-50 transition-all duration-500"
     >
       <Button class="absolute top-1 right-1 z-10 rounded-full py-1 px-3" v-if="!hideCover" variant="ghost" @click="hideCover = true">
         <CircleX />
       </Button>
       <div class="bg-gray-900/95 backdrop-blur-sm border border-gray-700 rounded-lg shadow-lg overflow-hidden p-4">
-        <div>
+        <Transition name="scaled">
           <GameImage
             v-if="currentGame && !hideCover"
             :src="currentGame.media?.thumbnail"
@@ -23,15 +23,15 @@
             type="default"
             className="w-36 mx-auto"
           />
-        </div>
+        </Transition>
         <div class="p-4 cursor-pointer" @click="hideCover = false">
           <div class="flex items-center gap-3">
             <div class="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div>
-            <span class="text-white/90">{{ activeGame }}</span>
+            <span>{{ activeGame }}</span>
           </div>
         </div>
       </div>
-    </div>
+    </Card>
   </Transition>
 </template>
 
@@ -87,6 +87,9 @@ onMounted(() => {
 
   // Puis vérifier toutes les secondes
   statusInterval = window.setInterval(checkGameStatus, 1000)
+  setTimeout(() => {
+    hideCover.value = true
+  }, 5000)
 })
 
 onUnmounted(() => {
@@ -95,3 +98,23 @@ onUnmounted(() => {
   }
 })
 </script>
+
+<style lang="scss" scoped>
+
+.scaled-enter-active,
+.scaled-leave-active {
+  transition: all 0.5s ease;
+}
+
+.scaled-enter-from {
+  position: absolute;
+  opacity: 0;
+  transform: scale(0.9);
+}
+
+.scaled-leave-to {
+  opacity: 0;
+  transform: scale(0);
+}
+
+</style>

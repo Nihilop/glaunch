@@ -1,5 +1,5 @@
 <template>
-  <div class="relative">
+  <Card class="relative rounded-xl bg-gray-900/20 backdrop-blur border-none overflow-hidden">
     <div
       @click="goTo"
       :class="[
@@ -7,7 +7,7 @@
         viewMode === 'grid' ? 'h-48' : '',
         isActive
           ? 'p-1 !border-blue-600 !opacity-100 !blur-none'
-          : 'hover:scale-[1.02]',
+          : 'hover:scale-[1.1]',
         loading && 'opacity-60',
         viewMode === 'list' ? 'flex items-center gap-4 !h-24' : '',
       ]"
@@ -34,7 +34,7 @@
 
       <!-- List Mode Info -->
       <div v-if="viewMode === 'list'" class="flex-1 pr-4">
-        <h3 class="font-medium text-white">{{ game.metadata.title }}</h3>
+        <h3 class="font-medium">{{ game.metadata.title }}</h3>
         <div class="flex gap-2 mt-1">
           <span v-for="genre in game.metadata.genres?.slice(0, 2)"
                 :key="genre"
@@ -55,11 +55,11 @@
         ]"
       >
         <div class="bg-gradient-to-t from-black/90 to-transparent px-3 pt-8 rounded-md">
-          <h3 class="font-medium truncate text-white pb-2 select-none">{{ game.metadata.title }}</h3>
+          <h3 class="font-medium truncate pb-2 select-none">{{ game.metadata.title }}</h3>
         </div>
       </div>
     </div>
-  </div>
+  </Card>
 </template>
 
 <script setup lang="ts">

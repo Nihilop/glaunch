@@ -1,15 +1,16 @@
-import { defineStore } from 'pinia'
-import { getCurrentInstance, type App } from 'vue'
-import { type Router } from 'vue-router'
-import { ref, computed } from 'vue'
+import {defineStore} from 'pinia'
+import {computed, ref} from 'vue'
 import type {
+  Bounds,
+  Direction,
   NavigableRegion,
   NavigableZone,
-  NavigationState,
+  NavigationError,
   NavigationHistory,
+  NavigationMemoryState,
+  NavigationState,
   RegionConfig,
-  RegisterZoneOptions,
-  NavigationError, Direction, Bounds, NavigationMemoryState
+  RegisterZoneOptions
 } from './types'
 import {useSound} from "./useSound.ts";
 
@@ -180,6 +181,8 @@ export const useNavigationStore = defineStore('navigation', () => {
     }
 
     const currentIndex = state.value.activeIndex
+
+    currentZone._lastActivationSource = 'keyboard'
 
     if (debug.value) {
       console.log(`[Navigation] Current zone: ${currentZone.id}, index: ${currentIndex}`)

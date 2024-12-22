@@ -2,17 +2,17 @@
   <div class="fixed inset-0 bg-black/40 backdrop-blur-sm pt-24">
     <div class="container mx-auto p-4">
       <div class="flex justify-between items-center">
-        <h1 class="text-2xl text-white font-bold">GLaunch Overlay</h1>
+        <h1 class="text-2xl font-bold">GLaunch Overlay</h1>
         <button
           @click="closeOverlay"
-          class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded">
+          class="px-4 py-2 bg-red-500 hover:bg-red-600 rounded">
           Fermer
         </button>
       </div>
 
       <!-- Si on a un jeu actif -->
       <div v-if="activeGame" class="mt-4">
-        <h2 class="text-xl text-white">{{ activeGame.title }}</h2>
+        <h2 class="text-xl">{{ activeGame.title }}</h2>
         <!-- Autres infos du jeu -->
       </div>
     </div>

@@ -1,7 +1,7 @@
 <template>
-  <div class="flex h-screen bg-gray-900 text-white overflow-hidden ">
+  <div class="flex h-screen overflow-hidden ">
     <!-- Sidebar Filters - Desktop -->
-    <aside class="hidden lg:flex w-80 flex-shrink-0 flex-col gap-4 border-r border-gray-800 p-6 border-t overflow-y-auto">
+    <aside class="hidden lg:flex w-80 flex-shrink-0 flex-col gap-4 border-r border-background p-6 border-t overflow-y-auto bg-muted text-muted-foreground ">
       <div class="space-y-6">
         <!-- Search -->
         <div>
@@ -22,31 +22,24 @@
           <h3 class="text-sm mb-2">View Mode</h3>
           <div class="flex gap-2">
             <Button
-              variant="default"
-              :class="{'opacity-50' : viewMode !== 'grid'}"
-              @click="handleViewModeChange('grid')"
+              variant="ghost"
+              @click="handleViewModeChange(viewMode === 'grid' ? 'list' : 'grid')"
             >
-              <Grid class="h-4 w-4 mr-2" />
-              Grid
-            </Button>
-            <Button
-              variant="default"
-              :class="{'opacity-50' : viewMode !== 'list'}"
-              @click="handleViewModeChange('list')"
-            >
-              <List class="h-4 w-4 mr-2" />
-              List
+              <Grid v-if="viewMode === 'grid'" class="h-4 w-4 mr-2" />
+              <List v-else class="h-4 w-4 mr-2" />
+              {{viewMode === 'grid' ? 'Grid' : 'Liste'}}
             </Button>
           </div>
         </div>
 
-        <Separator class="bg-gray-800" />
+        <Separator class="bg-background" />
 
         <!-- Genres Filter -->
         <div>
           <h3 class="text-sm mb-2">Genres</h3>
-          <ScrollArea class="h-[200px] pr-4">
-            <div v-for="genre in uniqueTags" :key="genre" class="flex items-center">
+          <ScrollArea class="h-[250px] pr-4">
+            <div v-for="genre in uniqueTags" :key="genre" class="flex items-center space-y-2">
+
               <Checkbox
                 :id="genre"
                 :checked="selectedGenres.includes(genre)"
@@ -57,7 +50,6 @@
                     selectedGenres = selectedGenres.filter(g => g !== genre)
                   }
                  }"
-                class="border-gray-600"
               />
               <label :for="genre" class="ml-2 text-sm">
                 {{ genre }} ({{ getGamesCountByTag(genre) }})
@@ -66,7 +58,7 @@
           </ScrollArea>
         </div>
 
-        <Separator class="bg-gray-800" />
+        <Separator class="bg-background" />
 
         <!-- Recently Played Filter -->
         <div class="flex items-center">
@@ -80,10 +72,10 @@
           </label>
         </div>
 
-        <Separator class="bg-gray-800" />
+        <Separator class="bg-background" />
 
         <div class="flex items-center">
-          <Button @click="resetFilters">
+          <Button variant="info" @click="resetFilters">
             Reset
           </Button>
         </div>
@@ -159,8 +151,9 @@ const getGridColumns = (): number => {
 // Zone registration
 const { isActive: isGameActive, activeIndex: gameActiveIndex, updateBounds, updateZoneState, setActiveElement } = useZone(gamesListRef, {
   id: 'gamesList',
-  type: computed(() => viewMode.value === 'grid' ? 'grid' : 'vertical'),
-  columns: computed(() => viewMode.value === 'grid' ? getGridColumns() : 1),
+  type: computed(() => viewMode.value === 'grid' ? 'grid' : 'vertical').value,
+  columns: computed(() => viewMode.value === 'grid' ? getGridColumns() : 1).value,
+  hoverable: true,
   memory: true,
   onSelect: (index) => {
     const game = filteredGames.value[index]

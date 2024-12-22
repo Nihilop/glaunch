@@ -1,6 +1,6 @@
 <template>
   <Button
-    class="rounded-full transition-all duration-200 backdrop-blur bg-white/20 hover:bg-white/50"
+    class="rounded-full transition-all duration-200 backdrop-blur bg-white/20 hover:bg-white/50 text-foreground"
     :class="{'ring-2 ring-secondary bg-white/30' : isActive}"
   >
     <slot />

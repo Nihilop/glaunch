@@ -14,7 +14,7 @@
     />
     <div
       v-if="loading"
-      class="absolute inset-0 flex items-center justify-center bg-gray-900/20 backdrop-blur-sm"
+      class="absolute inset-0 flex items-center justify-center bg-gray-900/20 backdrop-blur-sm rounded-md"
     >
       <LoadingSpinner class="w-6 h-6" />
     </div>

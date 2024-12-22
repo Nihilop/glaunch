@@ -1,50 +1,51 @@
 <template>
-  <div class="rounded-lg shadow bg-gray-800 p-4 mb-6 max-w-screen-lg">
-    <h3 class="text-lg font-semibold mb-4">Paramètres système</h3>
+  <div class="rounded-lg shadow bg-muted p-4 mb-6 max-w-screen-lg">
+    <h3 class="text-lg font-semibold mb-4 text-foreground">Paramètres système</h3>
 
     <!-- General Settings -->
     <div class="space-y-6">
       <div class="space-y-3">
-        <h4 class="font-medium text-gray-700">Paramètres généraux</h4>
+        <h4 class="font-medium text-foreground/50">Paramètres généraux</h4>
         <div class="space-y-2">
-          <label class="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              v-model="settings.start_with_windows"
-              @change="saveSettings"
-              class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
-            />
-            <span>Démarrer avec Windows</span>
-          </label>
 
-          <label class="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              v-model="settings.minimize_to_tray"
-              @change="saveSettings"
-              class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
-            />
-            <span>Réduire dans la zone de notification</span>
-          </label>
+          <div class="flex items-center space-x-2">
+            <Checkbox id="start_with_windows" v-model:checked="settings.start_with_windows" @update:checked="saveSettings"/>
+            <label
+              for="start_with_windows"
+              class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-foreground/50"
+            >
+              Démarrer avec Windows
+            </label>
+          </div>
 
-          <label class="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              v-model="settings.check_updates_on_startup"
-              @change="saveSettings"
-              class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
-            />
-            <span>Vérifier les mises à jour au démarrage</span>
-          </label>
+          <div class="flex items-center space-x-2">
+            <Checkbox id="start_with_windows" v-model:checked="settings.minimize_to_tray" @update:checked="saveSettings"/>
+            <label
+              for="start_with_windows"
+              class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-foreground/50"
+            >
+              Réduire dans la zone de notification
+            </label>
+          </div>
+
+          <div class="flex items-center space-x-2">
+            <Checkbox id="start_with_windows" v-model:checked="settings.check_updates_on_startup" @update:checked="saveSettings"/>
+            <label
+              for="start_with_windows"
+              class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-foreground/50"
+            >
+              Vérifier les mises à jour au démarrage
+            </label>
+          </div>
         </div>
       </div>
 
       <!-- Updates Section -->
       <div class="space-y-3">
-        <h4 class="font-medium text-gray-700">Mises à jour</h4>
+        <h4 class="font-medium text-foreground/50">Mises à jour</h4>
         <div class="space-y-2">
           <div class="text-sm">
-            <span class="font-medium">Version actuelle :</span>
+            <span class="font-medium ">Version actuelle :</span>
             <span class="ml-2">{{ updateStatus.current_version }}</span>
           </div>
 
@@ -56,9 +57,8 @@
           </div>
 
           <div class="flex gap-2 mt-2">
-            <button
+            <Button
               @click="checkUpdates"
-              class="px-3 py-1.5 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               :disabled="isCheckingUpdate"
             >
               <svg
@@ -72,12 +72,12 @@
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
               {{ isCheckingUpdate ? 'Vérification...' : 'Vérifier les mises à jour' }}
-            </button>
+            </Button>
 
-            <button
+            <Button
               v-if="updateStatus.update_available"
+              variant="success"
               @click="installUpdate"
-              class="px-3 py-1.5 text-sm bg-green-500 text-white rounded hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               :disabled="isInstallingUpdate"
             >
               <svg
@@ -91,7 +91,7 @@
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
               {{ isInstallingUpdate ? 'Installation...' : 'Installer la mise à jour' }}
-            </button>
+            </Button>
           </div>
 
           <div v-if="updateStatus.release_notes" class="mt-2 text-sm">
@@ -103,11 +103,11 @@
 
       <!-- Database Section -->
       <div class="space-y-3">
-        <h4 class="font-medium text-gray-700">Base de données</h4>
+        <h4 class="font-medium text-foreground/50">Base de données</h4>
         <div class="flex gap-2">
-          <button
+          <Button
             @click="exportDatabase"
-            class="px-3 py-1.5 text-sm bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors flex items-center gap-2"
+            variant="info"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -115,11 +115,11 @@
               <line x1="12" y1="3" x2="12" y2="15"/>
             </svg>
             Exporter
-          </button>
+          </Button>
 
-          <button
+          <Button
             @click="importDatabase"
-            class="px-3 py-1.5 text-sm bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors flex items-center gap-2"
+            variant="muted"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -127,7 +127,7 @@
               <line x1="12" y1="15" x2="12" y2="3"/>
             </svg>
             Importer
-          </button>
+          </Button>
         </div>
       </div>
     </div>

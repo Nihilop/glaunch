@@ -3,8 +3,8 @@
 
     <div
       ref="mainNavRef"
-      class="flex flex-col h-full bg-black/20 items-center gap-3 px-2 py-4 backdrop-blur-sm"
-      :class="{'border-r  border-gray-800' : isList}"
+      class="flex flex-col h-full items-center gap-3 px-2 py-4 backdrop-blur-sm"
+      :class="[isList ? 'border-r border-background' : 'bg-black/20 ']"
     >
       <!-- Remplacer RouterLink par des div/buttons -->
       <button
@@ -12,15 +12,14 @@
         :key="item.path"
         :class="[
           'p-3 rounded-lg transition-all duration-200',
-          (isActive && activeIndex === index) && 'ring-2 ring-blue-500 bg-white/10',
+          (isActive && activeIndex === index) && 'ring-2 ring-blue-500 bg-black/10 dark:bg-white/10',
           {'mt-auto' : item.path === '#'}
         ]"
         @click="() => router.push(item.path)"
-        @mouseover="() => setActiveElement(index)"
       >
         <component
           :is="item.icon"
-          class="w-5 h-5 hover:scale-110 transition-all duration-500"
+          class="w-5 h-5 hover:scale-110 transition-all duration-500 text-foreground"
         />
       </button>
     </div>
@@ -53,10 +52,11 @@ const { regionId } = useRegion({
 })
 
 
-const { isActive, activeIndex, setActiveElement } = useZone(mainNavRef, {
+const { isActive, activeIndex } = useZone(mainNavRef, {
   id: 'mainNav',
   type: 'vertical',
   memory: false,
+  hoverable: true,
   onSelect: (index) => {
     const item = menuItems.value[index]
     if (item && item.path !== '#') {
