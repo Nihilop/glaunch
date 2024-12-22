@@ -77,7 +77,7 @@
                                     <p class="text-xl font-bold">{{ result.name }}</p><span
                                     class="opacity-50">ID: {{ result.id }}</span>
                                   </div>
-                                  <span>{{ result.release_date }}</span>
+                                  <span class="mr-2">{{ result.release_date }}</span>
                                   <span>{{ result.company }}</span>
                                 </div>
                               </div>
