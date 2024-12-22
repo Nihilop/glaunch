@@ -5,6 +5,10 @@ use std::fs;
 use std::path::PathBuf;
 use tauri::AppHandle;
 use crate::utils::AppPaths;
+use winreg::enums::*;
+use winreg::RegKey;
+use windows::Win32::UI::WindowsAndMessaging::*;
+use windows::Win32::Foundation::HWND;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AppSettings {
@@ -26,6 +30,7 @@ impl Default for AppSettings {
 pub struct SettingsManager {
     settings_path: PathBuf,
     settings: AppSettings,
+    paths: AppPaths,
 }
 
 impl SettingsManager {
@@ -52,6 +57,7 @@ impl SettingsManager {
         Ok(Self {
             settings_path,
             settings,
+            paths,
         })
     }
 
@@ -77,42 +83,63 @@ impl SettingsManager {
     }
 
     fn update_autostart(&self) -> Result<(), AppError> {
-        let startup_dir = dirs::home_dir()
-            .ok_or_else(|| AppError {
-                message: "Could not find home directory".to_string(),
-            })?
-            .join("AppData")
-            .join("Roaming")
-            .join("Microsoft")
-            .join("Windows")
-            .join("Start Menu")
-            .join("Programs")
-            .join("Startup");
+        let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+        let path = r"Software\Microsoft\Windows\CurrentVersion\Run";
+        let (key, _) = hkcu.create_subkey(path).map_err(|e| AppError {
+            message: format!("Failed to open/create registry key: {}", e),
+        })?;
 
-        let shortcut_path = startup_dir.join("GLaunch.lnk");
         let current_exe = env::current_exe().map_err(|e| AppError {
             message: format!("Failed to get current exe path: {}", e),
         })?;
 
         if self.settings.start_with_windows {
-            // Ici, vous devriez implémenter la création du raccourci Windows
-            // Pour cet exemple, on simule juste la création
-            Ok(())
+            key.set_value(
+                "GLaunch",
+                &current_exe.to_string_lossy().to_string(),
+            ).map_err(|e| AppError {
+                message: format!("Failed to set registry value: {}", e),
+            })?;
         } else {
-            if shortcut_path.exists() {
-                fs::remove_file(shortcut_path).map_err(|e| AppError {
-                    message: format!("Failed to remove startup shortcut: {}", e),
+            // EnumValues est un itérateur directement - pas besoin de match
+            let mut found = false;
+            for value in key.enum_values() {
+                if let Ok((name, _)) = value {
+                    if name == "GLaunch" {
+                        found = true;
+                        break;
+                    }
+                }
+            }
+
+            if found {
+                key.delete_value("GLaunch").map_err(|e| AppError {
+                    message: format!("Failed to delete registry value: {}", e),
                 })?;
             }
-            Ok(())
         }
+
+        Ok(())
     }
 
-    pub fn export_database(&self, path: PathBuf) -> Result<(), AppError> {
-        let app_data = env::var("APPDATA").map_err(|e| AppError {
-            message: format!("Failed to get APPDATA path: {}", e),
-        })?;
-        let db_path = PathBuf::from(app_data).join("glaunch").join("games.db");
+    pub fn should_minimize_to_tray(&self, hwnd: HWND) -> bool {
+        if !self.settings.minimize_to_tray {
+            return false;
+        }
+
+        unsafe {
+            let style = GetWindowLongW(hwnd, GWL_STYLE);
+            if (style as u32 & WS_MINIMIZE.0) != 0 {
+                return false;
+            }
+        }
+
+        true
+    }
+
+    pub fn export_database(&self, export_path: PathBuf) -> Result<(), AppError> {
+        // Utiliser le chemin de la base de données depuis AppPaths
+        let db_path = self.paths.get_database_path();
 
         if !db_path.exists() {
             return Err(AppError {
@@ -120,18 +147,18 @@ impl SettingsManager {
             });
         }
 
-        fs::copy(db_path, path).map_err(|e| AppError {
+        fs::copy(&db_path, export_path).map_err(|e| AppError {
             message: format!("Failed to export database: {}", e),
         })?;
         Ok(())
     }
 
-    pub fn import_database(&self, path: PathBuf) -> Result<(), AppError> {
-        let app_data = env::var("APPDATA").map_err(|e| AppError {
-            message: format!("Failed to get APPDATA path: {}", e),
+    pub fn import_database(&self, import_path: PathBuf) -> Result<(), AppError> {
+        // Utiliser le chemin de la base de données depuis AppPaths
+        let db_path = self.paths.get_database_path();
+        let db_dir = db_path.parent().ok_or_else(|| AppError {
+            message: "Failed to get database directory".to_string(),
         })?;
-        let db_dir = PathBuf::from(app_data).join("glaunch");
-        let db_path = db_dir.join("games.db");
 
         // Créer une sauvegarde
         if db_path.exists() {
@@ -141,7 +168,7 @@ impl SettingsManager {
             })?;
         }
 
-        fs::copy(path, db_path).map_err(|e| AppError {
+        fs::copy(import_path, &db_path).map_err(|e| AppError {
             message: format!("Failed to import database: {}", e),
         })?;
         Ok(())

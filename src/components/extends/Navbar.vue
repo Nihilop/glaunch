@@ -1,9 +1,9 @@
 <template>
-  <nav class="w-16 z-50 h-screen fixed top-0 left-0 translate-y-0 transition-all duration-500">
+  <nav class="w-16 z-50 h-screen fixed top-0 left-0">
 
     <div
       ref="mainNavRef"
-      class="flex flex-col h-full bg-black/20 items-center gap-3 p-2 backdrop-blur-sm"
+      class="flex flex-col h-full bg-black/20 items-center gap-3 px-2 py-4 backdrop-blur-sm"
       :class="{'border-r  border-gray-800' : isList}"
     >
       <!-- Remplacer RouterLink par des div/buttons -->
@@ -12,7 +12,8 @@
         :key="item.path"
         :class="[
           'p-3 rounded-lg transition-all duration-200',
-          (isActive && activeIndex === index) && 'ring-2 ring-blue-500 bg-white/10'
+          (isActive && activeIndex === index) && 'ring-2 ring-blue-500 bg-white/10',
+          {'mt-auto' : item.path === '#'}
         ]"
         @click="() => router.push(item.path)"
       >

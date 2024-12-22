@@ -1,5 +1,5 @@
 <template>
-  <div class="rounded-lg shadow p-4 mb-6">
+  <div class="rounded-lg shadow bg-gray-800 p-4 mb-6 max-w-screen-lg">
     <h3 class="text-lg font-semibold mb-4">Paramètres système</h3>
 
     <!-- General Settings -->

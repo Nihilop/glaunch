@@ -31,6 +31,7 @@ use monitor::GameMonitor;
 use overlay::GameOverlay;
 use utils::settings::SettingsManager;
 use utils::AppError;
+use windows::Win32::Foundation::HWND;
 
 // États de l'application
 pub struct AppState {
@@ -219,15 +220,29 @@ pub fn run() {
         })
         .on_window_event(|window, event| {
             if let WindowEvent::CloseRequested { api, .. } = event {
-                // Enlevez .event()
                 let app_handle = window.app_handle();
 
-                // Vérifier les paramètres sans async/await
-                let settings = SettingsManager::new(&app_handle).unwrap();;
-                if settings.get_settings().minimize_to_tray {
-                    log_info!("Minimizing to tray instead of closing");
-                    window.hide().unwrap();
-                    api.prevent_close();
+                // Convertir correctement le HWND
+                let raw_hwnd = window.hwnd().unwrap().0 as isize;
+                let hwnd = HWND(raw_hwnd);
+
+                // Vérifier les paramètres
+                match SettingsManager::new(&app_handle) {
+                    Ok(settings) => {
+                        if settings.should_minimize_to_tray(hwnd) {
+                            // Cacher la fenêtre uniquement
+                            log_info!("Minimizing to tray instead of closing");
+                            let _ = window.hide();
+                            api.prevent_close();
+                        } else {
+                            // Réellement quitter l'application
+                            log_info!("Closing application completely");
+                            std::process::exit(0); // Force la fermeture complète
+                        }
+                    }
+                    Err(e) => {
+                        log_error!("Failed to load settings: {}", e);
+                    }
                 }
             }
         })

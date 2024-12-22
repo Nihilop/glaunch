@@ -1,7 +1,7 @@
 <template>
-  <div class="flex min-h-screen bg-gray-900 text-white ">
+  <div class="flex h-screen bg-gray-900 text-white overflow-hidden ">
     <!-- Sidebar Filters - Desktop -->
-    <aside class="hidden lg:flex w-80 flex-shrink-0 flex-col gap-4 border-r border-gray-800 p-6 border-t">
+    <aside class="hidden lg:flex w-80 flex-shrink-0 flex-col gap-4 border-r border-gray-800 p-6 border-t overflow-y-auto">
       <div class="space-y-6">
         <!-- Search -->
         <div>
@@ -92,9 +92,10 @@
 
 
     <!-- Content Area -->
-    <main class="flex-1 p-6  border-t border-gray-800">
+    <main class="flex-1 p-6 h-full border-t border-gray-800 w-full overflow-y-auto">
       <div
         ref="gamesListRef"
+        class="max-w-screen-lg"
         :class="[
           viewMode === 'grid'
             ? 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4'

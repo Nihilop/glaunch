@@ -3,9 +3,9 @@
     <!-- Search Input -->
 
     <!-- Dynamic Background -->
-    <div class="fixed inset-0 transition-opacity duration-700">
+    <div class="fixed inset-0 transition-opacity duration-700 overflow-hidden">
       <GameBackground v-if="activeGame?.media?.background" :src="activeGame.media.background" alt="background" />
-      <div class="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/50 to-transparent"/>
+      <div class="absolute inset-0 bg-gradient-to-t from-gray-900 via-80% via-gray-900/40 to-gray-900/85 "/>
     </div>
 
     <!-- Content -->
@@ -30,7 +30,7 @@
       </nav>
 
       <!-- Games List -->
-      <section class="px-4 mt-8 flex-1">
+      <section class="px-4 mt-8 flex-1 flex flex-col">
         <!-- Loading State -->
         <div v-if="initialLoading" class="flex items-center justify-center min-h-[50vh]">
           <div class="flex items-center gap-3 bg-white/10 px-6 py-4 rounded-xl backdrop-blur-sm">
@@ -41,9 +41,6 @@
 
         <!-- Games Grid -->
         <div v-else class="mt-8 flex-1 transition-all duration-500">
-
-
-
           <!-- Pattern no result-->
           <PatternBackground
             v-if="query && !filteredGames.length"
@@ -56,8 +53,7 @@
           >
             <h1 class="text-3xl w-full">Aucun résultat</h1>
           </PatternBackground>
-
-          <div class="px-4">
+          <div class="px-4 flex flex-col justify-end  h-full">
             <div
               ref="gamesListRef"
               class="grid grid-flow-col auto-cols-[15rem] gap-4 overflow-x-auto hide-scrollbar"
@@ -72,32 +68,33 @@
                 view-mode="none"
               />
             </div>
+
+            <transition name="slide-up">
+              <div v-show="filteredGames[gameActiveIndex]" :key="filteredGames[gameActiveIndex]">
+                <h1 class="text-7xl pl-8">{{ filteredGames[gameActiveIndex]?.name || '' }}</h1>
+                <div
+                  class="space-x-2 ml-8 mt-4">
+                  <GameTag
+                    v-for="tag in filteredGames[gameActiveIndex]?.metadata.genres"
+                    :key="tag"
+                    :is-active="false"
+                    class="scale-80"
+                  >
+                    {{ tag }}
+                  </GameTag>
+                </div>
+                <div class="flex justify-start my-4 pl-8">
+                  <Button v-if="filteredGames[gameActiveIndex]" size="lg" @click="launchGame(filteredGames[gameActiveIndex].id)">
+                    Play
+                  </Button>
+                </div>
+              </div>
+            </transition>
           </div>
-
-
-          <transition name="slide-up">
-            <div v-if="filteredGames[gameActiveIndex]" :key="filteredGames[gameActiveIndex]">
-              <h1 class="text-7xl pl-8">{{ filteredGames[gameActiveIndex]?.name || '' }}</h1>
-              <div
-                class="space-x-2 ml-8 mt-4">
-                <GameTag
-                  v-for="tag in filteredGames[gameActiveIndex]?.metadata.genres"
-                  :key="tag"
-                  :is-active="false"
-                  class="scale-80"
-                >
-                  {{ tag }}
-                </GameTag>
-              </div>
-              <div class="flex justify-start my-4 pl-8">
-                <Button v-if="filteredGames[gameActiveIndex]" size="lg" @click="launchGame(filteredGames[gameActiveIndex].id)">
-                  Play
-                </Button>
-              </div>
-            </div>
-          </transition>
         </div>
+
       </section>
+
       <div class="fixed bottom-4 right-6 z-40">
         <Button :disabled="isLoading" variant="ghost" @click="loadGames(false)" class="hover:bg-white/20 backdrop-blur hover:text-white">
           <RefreshCcw :class="{'animate-rotate' : isLoading}" />

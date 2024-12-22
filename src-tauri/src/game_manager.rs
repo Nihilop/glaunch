@@ -269,11 +269,11 @@ impl GameManager {
                 media: None,
             },
             media: GameMedia {
-                thumbnail: icon_path.clone(), // Utiliser le clone
+                thumbnail: icon_path.clone(),
                 cover: None,
                 screenshots: Vec::new(),
                 background: None,
-                icon: icon_path, // Utiliser la valeur originale
+                icon: icon_path,
                 logo: None,
             },
             last_played: None,

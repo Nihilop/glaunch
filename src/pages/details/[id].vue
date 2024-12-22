@@ -3,7 +3,7 @@
     <!-- Dynamic Background -->
     <div class="absolute inset-0 transition-opacity duration-500">
       <GameBackground v-if="game?.media?.background || game?.media?.cover" :src="game.media.background || game.media.cover" alt="background" />
-      <div class="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/50 to-transparent"/>
+      <div class="absolute inset-0 bg-gradient-to-b from-gray-900/85 via-20% via-gray-900/40 to-transparent"/>
     </div>
 
     <!-- Back Button -->
