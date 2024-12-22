@@ -46,6 +46,7 @@
           "https://*.steampowered.com",
           "https://*.steamstatic.com",
           "https://images.igdb.com",
+          "//images.igdb.com",
           "data:",
           "blob:"
         ],

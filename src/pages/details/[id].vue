@@ -65,8 +65,13 @@
                             <PopoverTrigger as-child>
                               <div
                                 class="flex items-center space-x-4 bg-gray-400/20 shadow overflow-hidden rounded-md cursor-pointer">
-                                <img :src="result.cover_url" width="100px" class="rounded-md"
-                                     @error="handleImageError"/>
+                                <img
+                                  v-if="result.cover_url"
+                                  :src="result.cover_url"
+                                  :alt="result.name"
+                                  class="w-fit"
+                                  type="default"
+                                />
                                 <div>
                                   <div class="flex items-center space-x-2">
                                     <p class="text-xl font-bold">{{ result.name }}</p><span

@@ -122,7 +122,6 @@ import {useMediaPath} from "@/composables/useMediaPath.ts";
 import GameBackground from "@/components/GameBackground.vue";
 
 const router = useRouter()
-const { resolveMediaPath } = useMediaPath()
 // Refs
 const inputRef = ref<HTMLInputElement | null>(null)
 const gamesListRef = ref<HTMLElement | null>(null)
